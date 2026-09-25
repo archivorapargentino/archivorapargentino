@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acerca del Archivo | Archivo del Rap Argentino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #09090b;
+      --text-muted: #71717a;
+      --border: #e4e4e7;
+      --border-subtle: #f4f4f5;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .top-nav {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 20px 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+    }
+
+    .nav-link {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text);
+    }
+
+    .content-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 50px 20px 100px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 32px 0 12px;
+    }
+
+    p {
+      color: #27272a;
+      margin-bottom: 18px;
+      font-size: 0.98rem;
+    }
+
+    ul {
+      margin: 12px 0 20px 24px;
+      color: #27272a;
+    }
+
+    li {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .callout {
+      background-color: var(--border-subtle);
+      border-left: 3px solid var(--text);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 28px 0;
+      font-size: 0.92rem;
+      color: #3f3f46;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 30px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 2px;
+    }
+
+    .back-btn:hover {
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <a href="index.html" class="nav-link">Catálogo</a>
+    <a href="acerca.html" class="nav-link active">Acerca del Archivo</a>
+    <a href="colaborar.html" class="nav-link">Colaborar</a>
+  </nav>
+
+  <main class="content-container">
+    <h1>Acerca del Proyecto</h1>
+    <p class="lead">Un esfuerzo colaborativo e independiente para preservar y poner en valor la memoria discográfica del rap en Argentina.</p>
+
+    <h2>Objetivo y Misión</h2>
+    <p>El <strong>Archivo del Rap Argentino</strong> nace ante la necesidad de sistematizar, ordenar y resguardar la producción fonográfica del hip hop nacional desde sus inicios a fines de los años 80 hasta la escena contemporánea.</p>
+    <p>Muchas de las obras fundamentales de nuestra cultura fueron editadas en tiradas limitadas de casetes, CDs independientes o subidas a plataformas extintas o dispersas en la red. Este archivo busca garantizar que ningún lanzamiento quede en el olvido, facilitando el acceso a investigadores, oyentes y a las nuevas generaciones.</p>
+
+    <div class="callout">
+      El archivo prioriza lanzamientos con formato de álbum, EP, mixtape o demo, abarcando tanto lanzamientos de discográficas como producciones autogestionadas.
+    </div>
+
+   
+  	 <h2>Construcción Abierta</h2>
+    <p>Este catálogo no está cerrado: es un proyecto vivo en permanente revisión. La comunidad de oyentes, músicos, productores e investigadores es quien enriquece día a día la información a través de aportes y rectificaciones.</p>
+
+    <a href="index.html" class="back-btn">← Volver al catálogo</a>
+  </main>
+
+</body>
+</html>
