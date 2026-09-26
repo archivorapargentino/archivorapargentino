@@ -545,6 +545,18 @@
       } catch (e) {}
     }
 
+    // Actualiza la barra del navegador sin recargar la página
+    function updateURLParams() {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('q', searchQuery);
+      if (currentFilter && currentFilter !== 'all') params.set('filtro', currentFilter);
+      if (currentSort && currentSort !== 'alpha') params.set('orden', currentSort);
+
+      const qs = params.toString();
+      const newPath = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState(null, '', newPath);
+    }
+
     function parseCSV(text) {
       const rows = [];
       let currentRow = [];
@@ -679,34 +691,51 @@
       return null;
     }
 
-    // Integración nativa oEmbed de SoundCloud
+    // Integración oEmbed de SoundCloud con fallback para playlists/sets
     async function fetchSoundCloudData(scUrl) {
-      if (coverCache[scUrl] && scPlayerCache[scUrl]) {
+      const cleanUrl = scUrl.split('?')[0];
+
+      if (coverCache[cleanUrl] && scPlayerCache[cleanUrl]) {
         return {
-          cover: coverCache[scUrl],
-          iframe: scPlayerCache[scUrl]
+          cover: coverCache[cleanUrl],
+          iframe: scPlayerCache[cleanUrl]
         };
       }
+
+      let imgUrl = null;
+      let iframeHtml = null;
+
       try {
-        const res = await fetch(`https://soundcloud.com/oembed?format=json&auto_play=true&url=${encodeURIComponent(scUrl)}`);
-        if (!res.ok) return null;
-        const data = await res.json();
-
-        let imgUrl = data.thumbnail_url || null;
-        // SoundCloud a veces devuelve carátulas pequeñas (-large.jpg); reemplazamos por -t500x500 para alta definición
-        if (imgUrl && imgUrl.includes('-large.jpg')) {
-          imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
+        const res = await fetch(`https://soundcloud.com/oembed?format=json&auto_play=true&url=${encodeURIComponent(cleanUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          imgUrl = data.thumbnail_url || null;
+          iframeHtml = data.html || null;
         }
-
-        if (imgUrl) saveCoverCache(scUrl, imgUrl);
-        if (data.html) saveScPlayerCache(scUrl, data.html);
-
-        return {
-          cover: imgUrl,
-          iframe: data.html || null
-        };
       } catch (e) {}
-      return null;
+
+      if (!imgUrl || !iframeHtml) {
+        try {
+          const resMl = await fetch(`https://api.microlink.io?url=${encodeURIComponent(cleanUrl)}&iframe=true`);
+          if (resMl.ok) {
+            const jsonMl = await resMl.json();
+            if (!imgUrl) imgUrl = jsonMl?.data?.image?.url || null;
+            if (!iframeHtml) iframeHtml = jsonMl?.data?.iframe?.html || null;
+          }
+        } catch (e) {}
+      }
+
+      if (imgUrl && imgUrl.includes('-large.jpg')) {
+        imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
+      }
+
+      if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
+      if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
+
+      return {
+        cover: imgUrl,
+        iframe: iframeHtml
+      };
     }
 
     function shuffleArray(array) {
@@ -804,8 +833,9 @@
                 container.innerHTML = `<img src="${ytImg}" alt="${album}" class="loaded" onerror="this.onerror=null; this.src='${fallbackImg}';">`;
               }
             } else if (platform === 'spotify' || platform === 'bandcamp' || platform === 'soundcloud') {
-              if (coverCache[link]) {
-                container.innerHTML = `<img src="${coverCache[link]}" alt="${album}" class="loaded">`;
+              const cleanLink = link.split('?')[0];
+              if (coverCache[cleanLink] || coverCache[link]) {
+                container.innerHTML = `<img src="${coverCache[cleanLink] || coverCache[link]}" alt="${album}" class="loaded">`;
               } else {
                 requestQueue.push({ container, platform, link, album });
                 processQueue();
@@ -850,8 +880,7 @@
       let embedHtml = '';
 
       if (link.includes('spotify.com')) {
-        let cleanUrl = link.split('?')[0];
-        cleanUrl = cleanUrl.replace(/\/intl-[a-z]{2}\//i, '/');
+        let cleanUrl = link.split('?')[0].replace(/\/intl-[a-z]{2}\//i, '/');
         const match = cleanUrl.match(/spotify\.com\/(album|track|playlist|artist)\/([a-zA-Z0-9]+)/);
 
         if (match) {
@@ -878,8 +907,9 @@
           if (bcData && bcData.iframe) embedHtml = bcData.iframe;
         }
       } else if (link.includes('soundcloud.com')) {
-        if (scPlayerCache[link]) {
-          embedHtml = scPlayerCache[link];
+        const cleanLink = link.split('?')[0];
+        if (scPlayerCache[cleanLink]) {
+          embedHtml = scPlayerCache[cleanLink];
         } else {
           const scData = await fetchSoundCloudData(link);
           if (scData && scData.iframe) embedHtml = scData.iframe;
@@ -1007,6 +1037,7 @@
             const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
             if (allBtn) allBtn.classList.add('active');
 
+            updateURLParams();
             renderAlbums();
             window.scrollTo({ top: 120, behavior: 'smooth' });
           });
@@ -1024,6 +1055,33 @@
         const rows = parseCSV(csvText);
         rawData = processSheetRows(rows);
         updateHeaderMosaic();
+
+        // Lectura de parámetros de la URL al cargar
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.has('q')) {
+          searchQuery = urlParams.get('q');
+          searchInput.value = searchQuery;
+        }
+
+        if (urlParams.has('filtro')) {
+          const paramFilter = urlParams.get('filtro');
+          const targetBtn = document.querySelector(`.filter-btn[data-filter="${paramFilter}"]`);
+          if (targetBtn) {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            targetBtn.classList.add('active');
+            currentFilter = paramFilter;
+          }
+        }
+
+        if (urlParams.has('orden')) {
+          const paramSort = urlParams.get('orden');
+          if (['alpha', 'asc', 'desc'].includes(paramSort)) {
+            currentSort = paramSort;
+            sortSelect.value = paramSort;
+          }
+        }
+
         renderAlbums();
       } catch (err) {
         statsDisplay.textContent = 'Error al cargar los datos desde Google Sheets. Verifica que el archivo esté publicado en la web como CSV.';
@@ -1037,11 +1095,13 @@
 
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim();
+      updateURLParams();
       renderAlbums();
     });
 
     sortSelect.addEventListener('change', (e) => {
       currentSort = e.target.value;
+      updateURLParams();
       renderAlbums();
     });
 
@@ -1050,6 +1110,7 @@
         filterButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.filter;
+        updateURLParams();
         renderAlbums();
       });
     });
