@@ -592,11 +592,13 @@
       return rows;
     }
 
+    // 1. MODIFICADO: Lee la columna D (índice 3) para la carátula manual
     function processSheetRows(rows) {
       return rows.map(cols => {
         let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
@@ -607,7 +609,7 @@
           album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        return [artist, album, year, link];
+        return [artist, album, year, link, manualCover];
       });
     }
 
@@ -812,6 +814,7 @@
     const requestQueue = [];
     let isProcessing = false;
 
+    // 3. MODIFICADO: Prioriza manualCover de forma inmediata antes de consultar oEmbed o YouTube
     function initObserver() {
       if (observer) observer.disconnect();
 
@@ -822,8 +825,15 @@
             const platform = container.dataset.platform;
             const link = container.dataset.link;
             const album = container.dataset.album;
+            const manualCover = container.dataset.manualCover;
 
             obs.unobserve(container);
+
+            // Si se especificó carátula manual, se usa de inmediato
+            if (manualCover && manualCover !== '') {
+              container.innerHTML = `<img src="${manualCover}" alt="${album}" class="loaded">`;
+              return;
+            }
 
             if (platform === 'youtube') {
               const ytId = extractYouTubeId(link);
@@ -932,11 +942,12 @@
       playerFrameBox.innerHTML = '';
     });
 
+    // 2. MODIFICADO: Recibe manualCover y lo asigna al dataset de cover-container
     function renderAlbums() {
       grid.innerHTML = '';
       initObserver();
 
-      let filtered = rawData.filter(([artist, album, year, link]) => {
+      let filtered = rawData.filter(([artist, album, year, link, manualCover]) => {
         const fullText = `${artist} ${album} ${year}`.toLowerCase();
         const matchesSearch = fullText.includes(searchQuery.toLowerCase());
 
@@ -972,7 +983,7 @@
         return;
       }
 
-      filtered.forEach(([artist, album, year, link]) => {
+      filtered.forEach(([artist, album, year, link, manualCover]) => {
         const card = document.createElement('div');
         card.className = 'card';
 
@@ -994,7 +1005,7 @@
         }
 
         card.innerHTML = `
-          <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}">
+          <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}" data-manual-cover="${manualCover || ''}">
             <div class="cover-placeholder">Sin carátula</div>
           </div>
           <div class="card-body">
@@ -1012,7 +1023,7 @@
         `;
 
         const coverEl = card.querySelector('.cover-container');
-        if (platform !== 'none') {
+        if (platform !== 'none' || (manualCover && manualCover !== '')) {
           observer.observe(coverEl);
         }
 
