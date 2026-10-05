@@ -332,8 +332,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    // Usamos versionado v2 para que limpie automáticamente la caché anterior con iframes sin tracklist
-    const CACHE_KEY_BC = 'hh_bc_players_v2';
+    const CACHE_KEY_BC = 'hh_bc_players_v3';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -444,7 +443,6 @@
           let iframeHtml = json?.data?.iframe?.html || null;
 
           if (iframeHtml) {
-            // Se fuerza el reproductor grande con tracklist visible
             iframeHtml = iframeHtml
               .replace(/height="[0-9]+"/g, 'height="470"')
               .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 470px;"')
@@ -452,8 +450,7 @@
               .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/')
               .replace(/\/artwork=(none|small)\//g, '/artwork=big/');
 
-            // Si tiene src, inyectamos /tracklist=true/ antes de /transparent=true/ o del cierre
-            if (iframeHtml.includes('src="') && !iframeHtml.includes('tracklist=true')) {
+            if (!iframeHtml.includes('tracklist=true')) {
               iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
             }
           }
@@ -531,8 +528,16 @@
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
       } else if (link.includes('bandcamp.com')) {
-        const data = await fetchBandcampData(link);
-        if (data && data.iframe) embedHtml = data.iframe;
+        if (link.includes('EmbeddedPlayer')) {
+          let cleanBcUrl = link;
+          if (!cleanBcUrl.includes('tracklist=true')) {
+            cleanBcUrl = cleanBcUrl.replace(/\/size=large\//, '/size=large/tracklist=true/');
+          }
+          embedHtml = `<iframe style="border: 0; width: 100%; height: 470px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
+        } else {
+          const data = await fetchBandcampData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
         if (scPlayerCache[cleanLink]) {
@@ -553,7 +558,6 @@
     function renderTracklist(rawTracklist, isYouTube) {
       if (!rawTracklist || typeof rawTracklist !== 'string') return;
       
-      // Limpia comillas exteriores si quedaron del CSV
       let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
       if (!cleanData) return;
 
@@ -565,7 +569,6 @@
       if (cleanData.includes('\n')) {
         lines = cleanData.split(/[\r\n]+/);
       } else if (cleanData.match(/\d{1,2}:\d{2}/)) {
-        // Divide por comas o punto y coma que vengan antes de un timestamp (ej: ", 01:05 Pon paz...")
         lines = cleanData.split(/(?:,\s*|;\s*)(?=\d{1,2}:\d{2})/);
       } else {
         lines = cleanData.split(/[\r\n;,]+/);
@@ -637,7 +640,7 @@
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
         let manualCover = (cols[3] || '').trim();
-        let tracklistData = (cols[4] || '').trim(); // Columna E
+        let tracklistData = (cols[4] || '').trim();
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
