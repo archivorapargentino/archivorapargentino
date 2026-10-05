@@ -30,7 +30,7 @@
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.5;
-      padding-bottom: 60px;
+      padding-bottom: 80px;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -91,7 +91,7 @@
 
     .detail-grid {
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: 320px 1fr;
       gap: 40px;
       align-items: start;
     }
@@ -103,7 +103,7 @@
       }
     }
 
-    /* Columna Izquierda: Portada y Ficha Técnica */
+    /* Columna Izquierda */
     .album-cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -153,13 +153,13 @@
     .meta-label { color: var(--text-muted); }
     .meta-value { font-weight: 600; text-align: right; }
 
-    /* Columna Derecha: Título y Reproductor */
+    /* Columna Derecha */
     .album-header {
       margin-bottom: 24px;
     }
 
     .album-header h1 {
-      font-size: 2.2rem;
+      font-size: 2.1rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       line-height: 1.2;
@@ -168,7 +168,7 @@
     }
 
     .album-header .artist-line {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       color: var(--text-muted);
       font-weight: 500;
     }
@@ -179,13 +179,11 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background-color: #000000;
-      min-height: 380px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .player-container iframe {
       width: 100%;
-      height: 420px;
       border: none;
       display: block;
     }
@@ -193,6 +191,7 @@
     .btn-action-row {
       display: flex;
       gap: 12px;
+      margin-bottom: 30px;
     }
 
     .btn-external {
@@ -212,6 +211,69 @@
     .btn-external:hover {
       background-color: var(--btn-hover);
     }
+
+    /* Módulo de Lista de Temas / Tracklist */
+    .tracklist-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      background-color: var(--surface);
+    }
+
+    .tracklist-box h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .tracklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .track-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      transition: background-color 0.15s ease;
+      cursor: default;
+    }
+
+    .track-row.interactive {
+      cursor: pointer;
+    }
+
+    .track-row.interactive:hover {
+      background-color: var(--border-subtle);
+    }
+
+    .track-title-col {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .track-num {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      width: 20px;
+    }
+
+    .track-time {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background-color: var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -229,7 +291,7 @@
     <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
-      <!-- Columna Izquierda -->
+      <!-- Columna Izquierda: Portada y Metadatos -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -244,14 +306,14 @@
             <span class="meta-label">Plataforma</span>
             <span class="meta-value" id="metaPlatform">-</span>
           </div>
-          <div class="meta-item" id="metaIdRow">
+          <div class="meta-item">
             <span class="meta-label">ID Archivo</span>
             <span class="meta-value" id="metaId">-</span>
           </div>
         </div>
       </div>
 
-      <!-- Columna Derecha -->
+      <!-- Columna Derecha: Reproductor y Tracklist -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -264,6 +326,12 @@
           <a id="btnExternal" href="#" target="_blank" rel="noopener noreferrer" class="btn-external">
             Escuchar en la plataforma original ↗
           </a>
+        </div>
+
+        <!-- Bloque de Tracklist interactivo -->
+        <div id="tracklistBox" class="tracklist-box" style="display: none;">
+          <h3>Lista de temas</h3>
+          <div id="tracklistItems" class="tracklist-items"></div>
         </div>
       </div>
     </div>
@@ -345,13 +413,20 @@
       return match ? match[1] : null;
     }
 
+    function parseTimeToSeconds(timeStr) {
+      const parts = timeStr.trim().split(':').map(Number);
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      return 0;
+    }
+
     async function fetchSpotifyCover(url) {
       if (coverCache[url]) return coverCache[url];
       try {
         const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
         if (res.ok) {
           const data = await res.json();
-          if (data && data.thumbnail_url) {
+          if (data?.thumbnail_url) {
             saveCoverCache(url, data.thumbnail_url);
             return data.thumbnail_url;
           }
@@ -369,9 +444,19 @@
         if (res.ok) {
           const json = await res.json();
           const imgUrl = json?.data?.image?.url || null;
-          const iframeHtml = json?.data?.iframe?.html || null;
+          let iframeHtml = json?.data?.iframe?.html || null;
+
+          // Forzamos al iframe de Bandcamp a mostrar la lista completa
+          if (iframeHtml) {
+            iframeHtml = iframeHtml
+              .replace(/height="[0-9]+"/, 'height="470"')
+              .replace(/size=large/, 'size=large/tracklist=true')
+              .replace(/artwork=small/, 'artwork=big');
+          }
+
           if (imgUrl) saveCoverCache(url, imgUrl);
           if (iframeHtml) saveBcPlayerCache(url, iframeHtml);
+
           return { cover: imgUrl, iframe: iframeHtml };
         }
       } catch (e) {}
@@ -385,11 +470,14 @@
       }
       let imgUrl = null, iframeHtml = null;
       try {
-        const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
+        const res = await fetch(`https://soundcloud.com/oembed?format=json&show_artwork=true&url=${encodeURIComponent(cleanUrl)}`);
         if (res.ok) {
           const data = await res.json();
           imgUrl = data.thumbnail_url || null;
           iframeHtml = data.html || null;
+          if (iframeHtml) {
+            iframeHtml = iframeHtml.replace(/height="[0-9]+"/, 'height="450"');
+          }
         }
       } catch (e) {}
 
@@ -399,7 +487,10 @@
           if (resMl.ok) {
             const jsonMl = await resMl.json();
             if (!imgUrl) imgUrl = jsonMl?.data?.image?.url || null;
-            if (!iframeHtml) iframeHtml = jsonMl?.data?.iframe?.html || null;
+            if (!iframeHtml) {
+              iframeHtml = jsonMl?.data?.iframe?.html || null;
+              if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/, 'height="450"');
+            }
           }
         } catch (e) {}
       }
@@ -407,10 +498,13 @@
       if (imgUrl && imgUrl.includes('-large.jpg')) {
         imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
       }
+
       if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
       if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
       return { cover: imgUrl, iframe: iframeHtml };
     }
+
+    let activeYouTubeId = null;
 
     async function renderPlayer(link) {
       const box = document.getElementById('playerBox');
@@ -422,20 +516,21 @@
         if (match) {
           const type = match[1];
           const id = match[2];
-          // Formato extendido de 420px de altura para ver toda la lista de canciones
           embedHtml = `<iframe src="https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0" height="420" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
         }
       } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
         const listId = extractYouTubePlaylistId(link);
         const ytId = extractYouTubeId(link);
+        activeYouTubeId = ytId;
+
         if (listId) {
-          embedHtml = `<iframe src="https://www.youtube.com/embed/videoseries?list=${listId}" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+          embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${listId}&enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         } else if (ytId) {
-          embedHtml = `<iframe src="https://www.youtube.com/embed/${ytId}" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+          embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
       } else if (link.includes('bandcamp.com')) {
         if (bcPlayerCache[link]) {
-          embedHtml = bcPlayerCache[link];
+          embedHtml = bcPlayerCache[link].replace(/height="[0-9]+"/, 'height="470"');
         } else {
           const data = await fetchBandcampData(link);
           if (data && data.iframe) embedHtml = data.iframe;
@@ -443,7 +538,7 @@
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
         if (scPlayerCache[cleanLink]) {
-          embedHtml = scPlayerCache[cleanLink];
+          embedHtml = scPlayerCache[cleanLink].replace(/height="[0-9]+"/, 'height="450"');
         } else {
           const data = await fetchSoundCloudData(link);
           if (data && data.iframe) embedHtml = data.iframe;
@@ -455,6 +550,51 @@
       } else {
         box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor integrado directo. Puedes escucharlo en el enlace externo abajo.</div>`;
       }
+    }
+
+    function renderTracklist(rawTracklist, isYouTube) {
+      if (!rawTracklist || rawTracklist.trim() === '') return;
+
+      const tracklistBox = document.getElementById('tracklistBox');
+      const tracklistItems = document.getElementById('tracklistItems');
+      tracklistItems.innerHTML = '';
+
+      // Divide por saltos de línea o barras
+      const lines = rawTracklist.split(/\r?\n|;/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      lines.forEach((line, index) => {
+        const timeMatch = line.match(/(?:(\d{1,2}:\d{2}(?::\d{2})?))/);
+        let timeStr = timeMatch ? timeMatch[1] : '';
+        let titleStr = timeStr ? line.replace(timeStr, '').replace(/^[-–—.\s]+|[-–—.\s]+$/g, '').trim() : line;
+
+        const row = document.createElement('div');
+        row.className = `track-row ${isYouTube && timeStr ? 'interactive' : ''}`;
+
+        row.innerHTML = `
+          <div class="track-title-col">
+            <span class="track-num">${index + 1}.</span>
+            <span class="track-name">${titleStr}</span>
+          </div>
+          ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
+        `;
+
+        // Si es video de YouTube y tiene marca de tiempo, permite saltar al minuto
+        if (isYouTube && timeStr && activeYouTubeId) {
+          row.title = `Saltar a ${timeStr}`;
+          row.addEventListener('click', () => {
+            const seconds = parseTimeToSeconds(timeStr);
+            const frame = document.getElementById('ytPlayerFrame');
+            if (frame) {
+              frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1&enablejsapi=1`;
+            }
+          });
+        }
+
+        tracklistItems.appendChild(row);
+      });
+
+      tracklistBox.style.display = 'block';
     }
 
     async function init() {
@@ -487,6 +627,7 @@
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
         let manualCover = (cols[3] || '').trim();
+        let tracklistData = (cols[4] || '').trim(); // Columna E: Tracklist
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
@@ -531,8 +672,11 @@
           if (sc && sc.cover) coverBox.innerHTML = `<img src="${sc.cover}" alt="${album}">`;
         }
 
-        // Renderizar Reproductor y Mostrar
-        renderPlayer(link);
+        // Renderizar Reproductor y Tracklist
+        await renderPlayer(link);
+        const isYT = link.includes('youtube.com') || link.includes('youtu.be');
+        renderTracklist(tracklistData, isYT);
+
         statusEl.style.display = 'none';
         detailEl.style.display = 'grid';
 
