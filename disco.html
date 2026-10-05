@@ -435,11 +435,16 @@
           let iframeHtml = json?.data?.iframe?.html || null;
 
           if (iframeHtml) {
-            // Reemplaza tamaño pequeño por grande con tracklist visible
+            // Asegura altura adecuada, carátula grande y tracklist visible
             iframeHtml = iframeHtml
               .replace(/height="[0-9]+"/g, 'height="470"')
-              .replace(/size=(?:small|medium|large)/g, 'size=large/tracklist=true')
+              .replace(/tracklist=(?:false|true)/g, 'tracklist=true')
+              .replace(/size=(?:small|medium)/g, 'size=large')
               .replace(/artwork=(?:none|small)/g, 'artwork=big');
+
+            if (!iframeHtml.includes('tracklist=true')) {
+              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
+            }
           }
 
           if (imgUrl) saveCoverCache(url, imgUrl);
@@ -541,14 +546,25 @@
       const tracklistItems = document.getElementById('tracklistItems');
       tracklistItems.innerHTML = '';
 
-      // Soporta saltos de línea (\n), comas (,) o punto y coma (;)
-      const lines = rawTracklist.split(/[\r\n;]+/).map(l => l.trim()).filter(l => l.length > 0);
+      let lines = [];
+      // Si contiene saltos de línea normales
+      if (rawTracklist.includes('\n')) {
+        lines = rawTracklist.split(/[\r\n]+/);
+      } else if (rawTracklist.match(/\d{1,2}:\d{2}/)) {
+        // Si viene en una sola línea separada por comas o punto y coma antes de cada timestamp
+        lines = rawTracklist.split(/(?:,\s*|;\s*)(?=\d{1,2}:\d{2})/);
+      } else {
+        // Separación estándar por saltos, punto y coma o comas
+        lines = rawTracklist.split(/[\r\n;,]+/);
+      }
+
+      lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
       lines.forEach((line, index) => {
         const timeMatch = line.match(/(?:(\d{1,2}:\d{2}(?::\d{2})?))/);
         let timeStr = timeMatch ? timeMatch[1] : '';
-        let titleStr = timeStr ? line.replace(timeStr, '').replace(/^[-–—.\s]+|[-–—.\s]+$/g, '').trim() : line;
+        let titleStr = timeStr ? line.replace(timeStr, '').replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '').trim() : line;
 
         const row = document.createElement('div');
         row.className = `track-row ${isYouTube && timeStr ? 'interactive' : ''}`;
