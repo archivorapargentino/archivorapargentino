@@ -57,14 +57,9 @@
       transition: background-color 0.15s ease;
     }
 
-    .back-link:hover {
-      background-color: var(--border-subtle);
-    }
+    .back-link:hover { background-color: var(--border-subtle); }
 
-    .nav-links {
-      display: flex;
-      gap: 16px;
-    }
+    .nav-links { display: flex; gap: 16px; }
 
     .nav-link {
       font-size: 0.85rem;
@@ -154,9 +149,7 @@
     .meta-value { font-weight: 600; text-align: right; }
 
     /* Columna Derecha */
-    .album-header {
-      margin-bottom: 24px;
-    }
+    .album-header { margin-bottom: 24px; }
 
     .album-header h1 {
       font-size: 2.1rem;
@@ -180,6 +173,7 @@
       border: 1px solid var(--border);
       background-color: #000000;
       margin-bottom: 24px;
+      min-height: 200px;
     }
 
     .player-container iframe {
@@ -208,11 +202,9 @@
       transition: background-color 0.15s ease;
     }
 
-    .btn-external:hover {
-      background-color: var(--btn-hover);
-    }
+    .btn-external:hover { background-color: var(--btn-hover); }
 
-    /* Módulo de Lista de Temas / Tracklist */
+    /* Módulo de Tracklist */
     .tracklist-box {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -243,7 +235,7 @@
       border-radius: 6px;
       font-size: 0.88rem;
       transition: background-color 0.15s ease;
-      cursor: default;
+      user-select: none;
     }
 
     .track-row.interactive {
@@ -263,7 +255,7 @@
     .track-num {
       color: var(--text-muted);
       font-size: 0.8rem;
-      width: 20px;
+      width: 24px;
     }
 
     .track-time {
@@ -291,7 +283,7 @@
     <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
-      <!-- Columna Izquierda: Portada y Metadatos -->
+      <!-- Izquierda -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -313,7 +305,7 @@
         </div>
       </div>
 
-      <!-- Columna Derecha: Reproductor y Tracklist -->
+      <!-- Derecha -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -328,7 +320,6 @@
           </a>
         </div>
 
-        <!-- Bloque de Tracklist interactivo -->
         <div id="tracklistBox" class="tracklist-box" style="display: none;">
           <h3>Lista de temas</h3>
           <div id="tracklistItems" class="tracklist-items"></div>
@@ -436,9 +427,6 @@
     }
 
     async function fetchBandcampData(url) {
-      if (coverCache[url] && bcPlayerCache[url]) {
-        return { cover: coverCache[url], iframe: bcPlayerCache[url] };
-      }
       try {
         const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
         if (res.ok) {
@@ -446,12 +434,12 @@
           const imgUrl = json?.data?.image?.url || null;
           let iframeHtml = json?.data?.iframe?.html || null;
 
-          // Forzamos al iframe de Bandcamp a mostrar la lista completa
           if (iframeHtml) {
+            // Reemplaza tamaño pequeño por grande con tracklist visible
             iframeHtml = iframeHtml
-              .replace(/height="[0-9]+"/, 'height="470"')
-              .replace(/size=large/, 'size=large/tracklist=true')
-              .replace(/artwork=small/, 'artwork=big');
+              .replace(/height="[0-9]+"/g, 'height="470"')
+              .replace(/size=(?:small|medium|large)/g, 'size=large/tracklist=true')
+              .replace(/artwork=(?:none|small)/g, 'artwork=big');
           }
 
           if (imgUrl) saveCoverCache(url, imgUrl);
@@ -475,9 +463,7 @@
           const data = await res.json();
           imgUrl = data.thumbnail_url || null;
           iframeHtml = data.html || null;
-          if (iframeHtml) {
-            iframeHtml = iframeHtml.replace(/height="[0-9]+"/, 'height="450"');
-          }
+          if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/g, 'height="450"');
         }
       } catch (e) {}
 
@@ -489,7 +475,7 @@
             if (!imgUrl) imgUrl = jsonMl?.data?.image?.url || null;
             if (!iframeHtml) {
               iframeHtml = jsonMl?.data?.iframe?.html || null;
-              if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/, 'height="450"');
+              if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/g, 'height="450"');
             }
           }
         } catch (e) {}
@@ -529,16 +515,12 @@
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
       } else if (link.includes('bandcamp.com')) {
-        if (bcPlayerCache[link]) {
-          embedHtml = bcPlayerCache[link].replace(/height="[0-9]+"/, 'height="470"');
-        } else {
-          const data = await fetchBandcampData(link);
-          if (data && data.iframe) embedHtml = data.iframe;
-        }
+        const data = await fetchBandcampData(link);
+        if (data && data.iframe) embedHtml = data.iframe;
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
         if (scPlayerCache[cleanLink]) {
-          embedHtml = scPlayerCache[cleanLink].replace(/height="[0-9]+"/, 'height="450"');
+          embedHtml = scPlayerCache[cleanLink];
         } else {
           const data = await fetchSoundCloudData(link);
           if (data && data.iframe) embedHtml = data.iframe;
@@ -548,7 +530,7 @@
       if (embedHtml) {
         box.innerHTML = embedHtml;
       } else {
-        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor integrado directo. Puedes escucharlo en el enlace externo abajo.</div>`;
+        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor embebido directo. Puedes escucharlo en el botón de abajo.</div>`;
       }
     }
 
@@ -559,8 +541,8 @@
       const tracklistItems = document.getElementById('tracklistItems');
       tracklistItems.innerHTML = '';
 
-      // Divide por saltos de línea o barras
-      const lines = rawTracklist.split(/\r?\n|;/).map(l => l.trim()).filter(l => l.length > 0);
+      // Soporta saltos de línea (\n), comas (,) o punto y coma (;)
+      const lines = rawTracklist.split(/[\r\n;]+/).map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
       lines.forEach((line, index) => {
@@ -579,7 +561,6 @@
           ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
         `;
 
-        // Si es video de YouTube y tiene marca de tiempo, permite saltar al minuto
         if (isYouTube && timeStr && activeYouTubeId) {
           row.title = `Saltar a ${timeStr}`;
           row.addEventListener('click', () => {
@@ -606,7 +587,7 @@
 
       if (isNaN(albumIndex) || albumIndex < 0) {
         statusEl.className = 'error-state';
-        statusEl.innerHTML = 'ID de disco inválido o ausente. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        statusEl.innerHTML = 'ID de disco no especificado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
         return;
       }
 
@@ -618,7 +599,7 @@
 
         if (albumIndex >= rows.length) {
           statusEl.className = 'error-state';
-          statusEl.innerHTML = 'El disco solicitado no se encuentra en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+          statusEl.innerHTML = 'El disco no fue encontrado en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
           return;
         }
 
@@ -627,7 +608,7 @@
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
         let manualCover = (cols[3] || '').trim();
-        let tracklistData = (cols[4] || '').trim(); // Columna E: Tracklist
+        let tracklistData = (cols[4] || '').trim(); // Columna E
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
@@ -652,15 +633,13 @@
           btnExt.style.display = 'none';
         }
 
-        // Carga de Carátula
+        // Carátula
         const coverBox = document.getElementById('coverBox');
         if (manualCover) {
           coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
         } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
           const ytId = extractYouTubeId(link);
-          if (ytId) {
-            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
-          }
+          if (ytId) coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
         } else if (link.includes('spotify.com')) {
           const cv = await fetchSpotifyCover(link);
           if (cv) coverBox.innerHTML = `<img src="${cv}" alt="${album}">`;
@@ -672,7 +651,7 @@
           if (sc && sc.cover) coverBox.innerHTML = `<img src="${sc.cover}" alt="${album}">`;
         }
 
-        // Renderizar Reproductor y Tracklist
+        // Reproductor y Tracklist
         await renderPlayer(link);
         const isYT = link.includes('youtube.com') || link.includes('youtu.be');
         renderTracklist(tracklistData, isYT);
@@ -682,7 +661,7 @@
 
       } catch (err) {
         statusEl.className = 'error-state';
-        statusEl.innerHTML = 'Error al cargar la información del archivo. Intenta recargar la página.';
+        statusEl.innerHTML = 'Error al cargar la ficha del archivo. Intenta recargar la página.';
       }
     }
 
