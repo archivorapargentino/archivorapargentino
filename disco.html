@@ -244,6 +244,7 @@
 
     .track-row.interactive:hover {
       background-color: var(--border-subtle);
+      color: #000000;
     }
 
     .track-title-col {
@@ -331,8 +332,10 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
+    // Usamos versionado v2 para que limpie automáticamente la caché anterior con iframes sin tracklist
+    const CACHE_KEY_BC = 'hh_bc_players_v2';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
-    const bcPlayerCache = JSON.parse(localStorage.getItem('hh_bc_players') || '{}');
+    const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
 
     function saveCoverCache(key, url) {
@@ -342,7 +345,7 @@
 
     function saveBcPlayerCache(key, html) {
       bcPlayerCache[key] = html;
-      try { localStorage.setItem('hh_bc_players', JSON.stringify(bcPlayerCache)); } catch (e) {}
+      try { localStorage.setItem(CACHE_KEY_BC, JSON.stringify(bcPlayerCache)); } catch (e) {}
     }
 
     function saveScPlayerCache(key, html) {
@@ -360,11 +363,13 @@
         const char = text[i];
         const nextChar = text[i + 1];
 
-        if (char === '"' && insideQuotes && nextChar === '"') {
-          currentVal += '"';
-          i++;
-        } else if (char === '"') {
-          insideQuotes = !insideQuotes;
+        if (char === '"') {
+          if (insideQuotes && nextChar === '"') {
+            currentVal += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
         } else if (char === ',' && !insideQuotes) {
           currentRow.push(currentVal.trim());
           currentVal = '';
@@ -427,6 +432,10 @@
     }
 
     async function fetchBandcampData(url) {
+      if (bcPlayerCache[url] && coverCache[url]) {
+        return { cover: coverCache[url], iframe: bcPlayerCache[url] };
+      }
+
       try {
         const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
         if (res.ok) {
@@ -435,14 +444,16 @@
           let iframeHtml = json?.data?.iframe?.html || null;
 
           if (iframeHtml) {
-            // Asegura altura adecuada, carátula grande y tracklist visible
+            // Se fuerza el reproductor grande con tracklist visible
             iframeHtml = iframeHtml
               .replace(/height="[0-9]+"/g, 'height="470"')
-              .replace(/tracklist=(?:false|true)/g, 'tracklist=true')
-              .replace(/size=(?:small|medium)/g, 'size=large')
-              .replace(/artwork=(?:none|small)/g, 'artwork=big');
+              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 470px;"')
+              .replace(/\/tracklist=(false|true)\//g, '/')
+              .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/')
+              .replace(/\/artwork=(none|small)\//g, '/artwork=big/');
 
-            if (!iframeHtml.includes('tracklist=true')) {
+            // Si tiene src, inyectamos /tracklist=true/ antes de /transparent=true/ o del cierre
+            if (iframeHtml.includes('src="') && !iframeHtml.includes('tracklist=true')) {
               iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
             }
           }
@@ -540,22 +551,24 @@
     }
 
     function renderTracklist(rawTracklist, isYouTube) {
-      if (!rawTracklist || rawTracklist.trim() === '') return;
+      if (!rawTracklist || typeof rawTracklist !== 'string') return;
+      
+      // Limpia comillas exteriores si quedaron del CSV
+      let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
+      if (!cleanData) return;
 
       const tracklistBox = document.getElementById('tracklistBox');
       const tracklistItems = document.getElementById('tracklistItems');
       tracklistItems.innerHTML = '';
 
       let lines = [];
-      // Si contiene saltos de línea normales
-      if (rawTracklist.includes('\n')) {
-        lines = rawTracklist.split(/[\r\n]+/);
-      } else if (rawTracklist.match(/\d{1,2}:\d{2}/)) {
-        // Si viene en una sola línea separada por comas o punto y coma antes de cada timestamp
-        lines = rawTracklist.split(/(?:,\s*|;\s*)(?=\d{1,2}:\d{2})/);
+      if (cleanData.includes('\n')) {
+        lines = cleanData.split(/[\r\n]+/);
+      } else if (cleanData.match(/\d{1,2}:\d{2}/)) {
+        // Divide por comas o punto y coma que vengan antes de un timestamp (ej: ", 01:05 Pon paz...")
+        lines = cleanData.split(/(?:,\s*|;\s*)(?=\d{1,2}:\d{2})/);
       } else {
-        // Separación estándar por saltos, punto y coma o comas
-        lines = rawTracklist.split(/[\r\n;,]+/);
+        lines = cleanData.split(/[\r\n;,]+/);
       }
 
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
