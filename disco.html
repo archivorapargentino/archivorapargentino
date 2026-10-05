@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargando disco... | Archivo del Rap Argentino</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --text: #09090b;
+      --text-muted: #71717a;
+      --border: #e4e4e7;
+      --border-subtle: #f4f4f5;
+      --badge-bg: #f4f4f5;
+      --btn-bg: #18181b;
+      --btn-text: #ffffff;
+      --btn-hover: #27272a;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      padding-bottom: 60px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .top-nav {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-link {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: background-color 0.15s ease;
+    }
+
+    .back-link:hover {
+      background-color: var(--border-subtle);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .nav-link {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .nav-link:hover { color: var(--text); }
+
+    .container {
+      max-width: 1100px;
+      margin: 36px auto;
+      padding: 0 20px;
+    }
+
+    .loading-state, .error-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+    }
+
+    /* Columna Izquierda: Portada y Ficha Técnica */
+    .album-cover-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background-color: var(--border-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .album-cover-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .album-meta-box {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      background-color: var(--surface);
+    }
+
+    .meta-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    .meta-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+
+    .meta-item:last-child { margin-bottom: 0; }
+    .meta-label { color: var(--text-muted); }
+    .meta-value { font-weight: 600; text-align: right; }
+
+    /* Columna Derecha: Título y Reproductor */
+    .album-header {
+      margin-bottom: 24px;
+    }
+
+    .album-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .album-header .artist-line {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .player-container {
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background-color: #000000;
+      min-height: 380px;
+      margin-bottom: 20px;
+    }
+
+    .player-container iframe {
+      width: 100%;
+      height: 420px;
+      border: none;
+      display: block;
+    }
+
+    .btn-action-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-external {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-external:hover {
+      background-color: var(--btn-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <a href="index.html" class="back-link">← Volver al catálogo</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Catálogo</a>
+      <a href="acerca.html" class="nav-link">Acerca del Archivo</a>
+      <a href="colaborar.html" class="nav-link">Colaborar</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
+
+    <div id="detailView" class="detail-grid" style="display: none;">
+      <!-- Columna Izquierda -->
+      <div>
+        <div class="album-cover-box" id="coverBox">
+          <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
+        </div>
+        <div class="album-meta-box">
+          <div class="meta-title">Ficha Técnica</div>
+          <div class="meta-item">
+            <span class="meta-label">Año de salida</span>
+            <span class="meta-value" id="metaYear">-</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Plataforma</span>
+            <span class="meta-value" id="metaPlatform">-</span>
+          </div>
+          <div class="meta-item" id="metaIdRow">
+            <span class="meta-label">ID Archivo</span>
+            <span class="meta-value" id="metaId">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha -->
+      <div>
+        <header class="album-header">
+          <h1 id="albumTitle">-</h1>
+          <div class="artist-line" id="artistName">-</div>
+        </header>
+
+        <div class="player-container" id="playerBox"></div>
+
+        <div class="btn-action-row">
+          <a id="btnExternal" href="#" target="_blank" rel="noopener noreferrer" class="btn-external">
+            Escuchar en la plataforma original ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
+
+    const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
+    const bcPlayerCache = JSON.parse(localStorage.getItem('hh_bc_players') || '{}');
+    const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
+
+    function saveCoverCache(key, url) {
+      coverCache[key] = url;
+      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
+    }
+
+    function saveBcPlayerCache(key, html) {
+      bcPlayerCache[key] = html;
+      try { localStorage.setItem('hh_bc_players', JSON.stringify(bcPlayerCache)); } catch (e) {}
+    }
+
+    function saveScPlayerCache(key, html) {
+      scPlayerCache[key] = html;
+      try { localStorage.setItem('hh_sc_players', JSON.stringify(scPlayerCache)); } catch (e) {}
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let currentRow = [];
+      let currentVal = '';
+      let insideQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"' && insideQuotes && nextChar === '"') {
+          currentVal += '"';
+          i++;
+        } else if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === ',' && !insideQuotes) {
+          currentRow.push(currentVal.trim());
+          currentVal = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+          if (char === '\r' && nextChar === '\n') i++;
+          currentRow.push(currentVal.trim());
+          if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+          currentRow = [];
+          currentVal = '';
+        } else {
+          currentVal += char;
+        }
+      }
+      if (currentVal || currentRow.length > 0) {
+        currentRow.push(currentVal.trim());
+        if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+      }
+      return rows;
+    }
+
+    function getPlatform(url) {
+      if (!url) return 'Desconocida';
+      if (url.includes('spotify.com')) return 'Spotify';
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return 'YouTube';
+      if (url.includes('bandcamp.com')) return 'Bandcamp';
+      if (url.includes('soundcloud.com')) return 'SoundCloud';
+      return 'Enlace web';
+    }
+
+    function extractYouTubeId(url) {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+      return match ? match[1] : null;
+    }
+
+    function extractYouTubePlaylistId(url) {
+      const match = url.match(/[?&]list=([^#&?]+)/);
+      return match ? match[1] : null;
+    }
+
+    async function fetchSpotifyCover(url) {
+      if (coverCache[url]) return coverCache[url];
+      try {
+        const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.thumbnail_url) {
+            saveCoverCache(url, data.thumbnail_url);
+            return data.thumbnail_url;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function fetchBandcampData(url) {
+      if (coverCache[url] && bcPlayerCache[url]) {
+        return { cover: coverCache[url], iframe: bcPlayerCache[url] };
+      }
+      try {
+        const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
+        if (res.ok) {
+          const json = await res.json();
+          const imgUrl = json?.data?.image?.url || null;
+          const iframeHtml = json?.data?.iframe?.html || null;
+          if (imgUrl) saveCoverCache(url, imgUrl);
+          if (iframeHtml) saveBcPlayerCache(url, iframeHtml);
+          return { cover: imgUrl, iframe: iframeHtml };
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function fetchSoundCloudData(url) {
+      const cleanUrl = url.split('?')[0];
+      if (coverCache[cleanUrl] && scPlayerCache[cleanUrl]) {
+        return { cover: coverCache[cleanUrl], iframe: scPlayerCache[cleanUrl] };
+      }
+      let imgUrl = null, iframeHtml = null;
+      try {
+        const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          imgUrl = data.thumbnail_url || null;
+          iframeHtml = data.html || null;
+        }
+      } catch (e) {}
+
+      if (!imgUrl || !iframeHtml) {
+        try {
+          const resMl = await fetch(`https://api.microlink.io?url=${encodeURIComponent(cleanUrl)}&iframe=true`);
+          if (resMl.ok) {
+            const jsonMl = await resMl.json();
+            if (!imgUrl) imgUrl = jsonMl?.data?.image?.url || null;
+            if (!iframeHtml) iframeHtml = jsonMl?.data?.iframe?.html || null;
+          }
+        } catch (e) {}
+      }
+
+      if (imgUrl && imgUrl.includes('-large.jpg')) {
+        imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
+      }
+      if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
+      if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
+      return { cover: imgUrl, iframe: iframeHtml };
+    }
+
+    async function renderPlayer(link) {
+      const box = document.getElementById('playerBox');
+      let embedHtml = '';
+
+      if (link.includes('spotify.com')) {
+        let cleanUrl = link.split('?')[0].replace(/\/intl-[a-z]{2}\//i, '/');
+        const match = cleanUrl.match(/spotify\.com\/(album|track|playlist|artist)\/([a-zA-Z0-9]+)/);
+        if (match) {
+          const type = match[1];
+          const id = match[2];
+          // Formato extendido de 420px de altura para ver toda la lista de canciones
+          embedHtml = `<iframe src="https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0" height="420" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+      } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+        const listId = extractYouTubePlaylistId(link);
+        const ytId = extractYouTubeId(link);
+        if (listId) {
+          embedHtml = `<iframe src="https://www.youtube.com/embed/videoseries?list=${listId}" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        } else if (ytId) {
+          embedHtml = `<iframe src="https://www.youtube.com/embed/${ytId}" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        }
+      } else if (link.includes('bandcamp.com')) {
+        if (bcPlayerCache[link]) {
+          embedHtml = bcPlayerCache[link];
+        } else {
+          const data = await fetchBandcampData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
+      } else if (link.includes('soundcloud.com')) {
+        const cleanLink = link.split('?')[0];
+        if (scPlayerCache[cleanLink]) {
+          embedHtml = scPlayerCache[cleanLink];
+        } else {
+          const data = await fetchSoundCloudData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
+      }
+
+      if (embedHtml) {
+        box.innerHTML = embedHtml;
+      } else {
+        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor integrado directo. Puedes escucharlo en el enlace externo abajo.</div>`;
+      }
+    }
+
+    async function init() {
+      const statusEl = document.getElementById('statusMessage');
+      const detailEl = document.getElementById('detailView');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const albumIndex = parseInt(urlParams.get('id'));
+
+      if (isNaN(albumIndex) || albumIndex < 0) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'ID de disco inválido o ausente. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        return;
+      }
+
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (albumIndex >= rows.length) {
+          statusEl.className = 'error-state';
+          statusEl.innerHTML = 'El disco solicitado no se encuentra en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+          return;
+        }
+
+        const cols = rows[albumIndex];
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        }
+
+        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = album;
+        document.getElementById('artistName').textContent = artist;
+        document.getElementById('metaYear').textContent = year || 'Sin fecha';
+        document.getElementById('metaPlatform').textContent = getPlatform(link);
+        document.getElementById('metaId').textContent = `#${albumIndex + 1}`;
+
+        const btnExt = document.getElementById('btnExternal');
+        if (link) {
+          btnExt.href = link;
+        } else {
+          btnExt.style.display = 'none';
+        }
+
+        // Carga de Carátula
+        const coverBox = document.getElementById('coverBox');
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+        } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+          const ytId = extractYouTubeId(link);
+          if (ytId) {
+            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+          }
+        } else if (link.includes('spotify.com')) {
+          const cv = await fetchSpotifyCover(link);
+          if (cv) coverBox.innerHTML = `<img src="${cv}" alt="${album}">`;
+        } else if (link.includes('bandcamp.com')) {
+          const bc = await fetchBandcampData(link);
+          if (bc && bc.cover) coverBox.innerHTML = `<img src="${bc.cover}" alt="${album}">`;
+        } else if (link.includes('soundcloud.com')) {
+          const sc = await fetchSoundCloudData(link);
+          if (sc && sc.cover) coverBox.innerHTML = `<img src="${sc.cover}" alt="${album}">`;
+        }
+
+        // Renderizar Reproductor y Mostrar
+        renderPlayer(link);
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
+
+      } catch (err) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'Error al cargar la información del archivo. Intenta recargar la página.';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

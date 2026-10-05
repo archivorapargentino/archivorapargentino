@@ -36,18 +36,14 @@
       --radius: 8px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.5;
-      padding-bottom: 140px;
+      padding-bottom: 60px;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -68,9 +64,7 @@
       transition: color 0.15s ease;
     }
 
-    .nav-link:hover, .nav-link.active {
-      color: var(--text);
-    }
+    .nav-link:hover, .nav-link.active { color: var(--text); }
 
     header {
       padding: 30px 20px 24px;
@@ -141,9 +135,7 @@
       align-items: center;
     }
 
-    .search-box {
-      flex-grow: 1;
-    }
+    .search-box { flex-grow: 1; }
 
     .search-box input, .sort-select {
       padding: 11px 14px;
@@ -157,13 +149,8 @@
       transition: border-color 0.15s ease;
     }
 
-    .search-box input {
-      width: 100%;
-    }
-
-    .search-box input:focus, .sort-select:focus {
-      border-color: var(--text);
-    }
+    .search-box input { width: 100%; }
+    .search-box input:focus, .sort-select:focus { border-color: var(--text); }
 
     .sort-select {
       cursor: pointer;
@@ -195,11 +182,7 @@
       transition: all 0.15s ease;
     }
 
-    .filter-btn:hover {
-      color: var(--text);
-      border-color: #a1a1aa;
-    }
-
+    .filter-btn:hover { color: var(--text); border-color: #a1a1aa; }
     .filter-btn.active {
       background-color: var(--text);
       color: #ffffff;
@@ -227,6 +210,7 @@
       overflow: hidden;
       background-color: var(--surface);
       transition: border-color 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
     }
 
     .card:hover {
@@ -254,9 +238,7 @@
       transition: opacity 0.25s ease-in;
     }
 
-    .cover-container img.loaded {
-      opacity: 1;
-    }
+    .cover-container img.loaded { opacity: 1; }
 
     .cover-placeholder {
       font-size: 0.72rem;
@@ -340,15 +322,7 @@
       color: var(--btn-text);
     }
 
-    .btn-active:hover {
-      background-color: var(--btn-hover);
-    }
-
-    .btn-disabled {
-      background-color: var(--disabled-bg);
-      color: var(--disabled-text);
-      cursor: not-allowed;
-    }
+    .btn-active:hover { background-color: var(--btn-hover); }
 
     .empty-state {
       text-align: center;
@@ -356,88 +330,6 @@
       color: var(--text-muted);
       grid-column: 1 / -1;
       font-size: 0.9rem;
-    }
-
-    .player-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(255, 255, 255, 0.97);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border);
-      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08);
-      z-index: 1000;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      padding: 10px 16px;
-    }
-
-    .player-bar.hidden {
-      transform: translateY(100%);
-    }
-
-    .player-inner {
-      max-width: 1240px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .frame-box {
-      flex-grow: 1;
-      height: 96px;
-      display: flex;
-      align-items: center;
-    }
-
-    .frame-box iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      border-radius: var(--radius);
-    }
-
-    .player-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .ext-link {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      white-space: nowrap;
-      transition: all 0.15s ease;
-    }
-
-    .ext-link:hover {
-      color: var(--text);
-      border-color: #a1a1aa;
-    }
-
-    .close-player-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      transition: all 0.15s ease;
-    }
-
-    .close-player-btn:hover {
-      color: var(--text);
-      border-color: var(--text);
     }
   </style>
 </head>
@@ -484,16 +376,6 @@
     <main class="grid" id="albumGrid"></main>
   </div>
 
-  <div id="audioPlayer" class="player-bar hidden" aria-hidden="true">
-    <div class="player-inner">
-      <div id="playerFrameBox" class="frame-box"></div>
-      <div class="player-actions">
-        <a id="playerExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="ext-link">Abrir original ↗</a>
-        <button id="closePlayerBtn" class="close-player-btn" aria-label="Cerrar reproductor">✕</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
@@ -504,11 +386,6 @@
     const statsDisplay = document.getElementById('statsDisplay');
     const filterButtons = document.querySelectorAll('.filter-btn');
     const headerMosaic = document.getElementById('headerMosaic');
-
-    const audioPlayer = document.getElementById('audioPlayer');
-    const playerFrameBox = document.getElementById('playerFrameBox');
-    const playerExternalLink = document.getElementById('playerExternalLink');
-    const closePlayerBtn = document.getElementById('closePlayerBtn');
 
     let currentFilter = 'all';
     let searchQuery = '';
@@ -521,31 +398,12 @@
     ];
 
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
-    const bcPlayerCache = JSON.parse(localStorage.getItem('hh_bc_players') || '{}');
-    const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
 
     function saveCoverCache(key, url) {
       coverCache[key] = url;
-      try {
-        localStorage.setItem('hh_covers', JSON.stringify(coverCache));
-      } catch (e) {}
+      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
     }
 
-    function saveBcPlayerCache(key, iframeHtml) {
-      bcPlayerCache[key] = iframeHtml;
-      try {
-        localStorage.setItem('hh_bc_players', JSON.stringify(bcPlayerCache));
-      } catch (e) {}
-    }
-
-    function saveScPlayerCache(key, iframeHtml) {
-      scPlayerCache[key] = iframeHtml;
-      try {
-        localStorage.setItem('hh_sc_players', JSON.stringify(scPlayerCache));
-      } catch (e) {}
-    }
-
-    // Actualiza la barra del navegador sin recargar la página
     function updateURLParams() {
       const params = new URLSearchParams();
       if (searchQuery) params.set('q', searchQuery);
@@ -592,9 +450,8 @@
       return rows;
     }
 
-    // 1. MODIFICADO: Lee la columna D (índice 3) para la carátula manual
     function processSheetRows(rows) {
-      return rows.map(cols => {
+      return rows.map((cols, index) => {
         let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
@@ -609,7 +466,7 @@
           album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        return [artist, album, year, link, manualCover];
+        return [artist, album, year, link, manualCover, index];
       });
     }
 
@@ -648,11 +505,6 @@
       return match ? match[1] : null;
     }
 
-    function extractYouTubePlaylistId(url) {
-      const match = url.match(/[?&]list=([^#&?]+)/);
-      return match ? match[1] : null;
-    }
-
     async function fetchSpotifyCover(spotifyUrl) {
       if (coverCache[spotifyUrl]) return coverCache[spotifyUrl];
       try {
@@ -667,62 +519,41 @@
       return null;
     }
 
-    async function fetchBandcampData(bandcampUrl) {
-      if (coverCache[bandcampUrl] && bcPlayerCache[bandcampUrl]) {
-        return {
-          cover: coverCache[bandcampUrl],
-          iframe: bcPlayerCache[bandcampUrl]
-        };
-      }
+    async function fetchBandcampCover(bandcampUrl) {
+      if (coverCache[bandcampUrl]) return coverCache[bandcampUrl];
       try {
-        const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(bandcampUrl)}&iframe=true`);
-        if (!res.ok) return null;
-        const json = await res.json();
-
-        const imgUrl = json?.data?.image?.url || null;
-        if (imgUrl) saveCoverCache(bandcampUrl, imgUrl);
-
-        const iframeHtml = json?.data?.iframe?.html || null;
-        if (iframeHtml) saveBcPlayerCache(bandcampUrl, iframeHtml);
-
-        return {
-          cover: imgUrl || coverCache[bandcampUrl] || null,
-          iframe: iframeHtml || bcPlayerCache[bandcampUrl] || null
-        };
+        const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(bandcampUrl)}`);
+        if (res.ok) {
+          const json = await res.json();
+          const imgUrl = json?.data?.image?.url || null;
+          if (imgUrl) {
+            saveCoverCache(bandcampUrl, imgUrl);
+            return imgUrl;
+          }
+        }
       } catch (e) {}
       return null;
     }
 
-    // Integración oEmbed de SoundCloud con fallback para playlists/sets
-    async function fetchSoundCloudData(scUrl) {
+    async function fetchSoundCloudCover(scUrl) {
       const cleanUrl = scUrl.split('?')[0];
-
-      if (coverCache[cleanUrl] && scPlayerCache[cleanUrl]) {
-        return {
-          cover: coverCache[cleanUrl],
-          iframe: scPlayerCache[cleanUrl]
-        };
-      }
+      if (coverCache[cleanUrl]) return coverCache[cleanUrl];
 
       let imgUrl = null;
-      let iframeHtml = null;
-
       try {
-        const res = await fetch(`https://soundcloud.com/oembed?format=json&auto_play=true&url=${encodeURIComponent(cleanUrl)}`);
+        const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
         if (res.ok) {
           const data = await res.json();
           imgUrl = data.thumbnail_url || null;
-          iframeHtml = data.html || null;
         }
       } catch (e) {}
 
-      if (!imgUrl || !iframeHtml) {
+      if (!imgUrl) {
         try {
-          const resMl = await fetch(`https://api.microlink.io?url=${encodeURIComponent(cleanUrl)}&iframe=true`);
+          const resMl = await fetch(`https://api.microlink.io?url=${encodeURIComponent(cleanUrl)}`);
           if (resMl.ok) {
             const jsonMl = await resMl.json();
-            if (!imgUrl) imgUrl = jsonMl?.data?.image?.url || null;
-            if (!iframeHtml) iframeHtml = jsonMl?.data?.iframe?.html || null;
+            imgUrl = jsonMl?.data?.image?.url || null;
           }
         } catch (e) {}
       }
@@ -732,12 +563,7 @@
       }
 
       if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
-      if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
-
-      return {
-        cover: imgUrl,
-        iframe: iframeHtml
-      };
+      return imgUrl;
     }
 
     function shuffleArray(array) {
@@ -753,19 +579,14 @@
       if (!headerMosaic) return;
 
       const availableSpotify = rawData
-        .filter(([artist, album, year, link]) => getPlatform(link) === 'spotify' && coverCache[link])
-        .map(([artist, album, year, link]) => ({
-          artist,
-          album,
-          link,
-          cover: coverCache[link]
+        .filter(([artist, album, year, link, manualCover, id]) => getPlatform(link) === 'spotify' && coverCache[link])
+        .map(([artist, album, year, link, manualCover, id]) => ({
+          artist, album, id, cover: coverCache[link]
         }));
 
       const uniqueCoversMap = new Map();
       availableSpotify.forEach(item => {
-        if (!uniqueCoversMap.has(item.cover)) {
-          uniqueCoversMap.set(item.cover, item);
-        }
+        if (!uniqueCoversMap.has(item.cover)) uniqueCoversMap.set(item.cover, item);
       });
 
       const uniqueList = Array.from(uniqueCoversMap.values());
@@ -799,13 +620,11 @@
         img.src = item.cover;
         img.className = 'mosaic-thumb';
         img.alt = `${item.album} - ${item.artist}`;
-        img.title = `${item.artist} - ${item.album} (Clic para reproducir)`;
+        img.title = `${item.artist} - ${item.album} (Clic para ver ficha)`;
         img.loading = 'lazy';
-
         img.addEventListener('click', () => {
-          playAlbum(item.link);
+          window.location.href = `disco.html?id=${item.id}`;
         });
-
         headerMosaic.appendChild(img);
       });
     }
@@ -814,7 +633,6 @@
     const requestQueue = [];
     let isProcessing = false;
 
-    // 3. MODIFICADO: Prioriza manualCover de forma inmediata antes de consultar oEmbed o YouTube
     function initObserver() {
       if (observer) observer.disconnect();
 
@@ -829,7 +647,6 @@
 
             obs.unobserve(container);
 
-            // Si se especificó carátula manual, se usa de inmediato
             if (manualCover && manualCover !== '') {
               container.innerHTML = `<img src="${manualCover}" alt="${album}" class="loaded">`;
               return;
@@ -865,15 +682,11 @@
 
       if (platform === 'spotify') {
         imgUrl = await fetchSpotifyCover(link);
-        if (imgUrl && headerMosaic && headerMosaic.children.length < 12) {
-          updateHeaderMosaic();
-        }
+        if (imgUrl && headerMosaic && headerMosaic.children.length < 12) updateHeaderMosaic();
       } else if (platform === 'bandcamp') {
-        const bcData = await fetchBandcampData(link);
-        if (bcData && bcData.cover) imgUrl = bcData.cover;
+        imgUrl = await fetchBandcampCover(link);
       } else if (platform === 'soundcloud') {
-        const scData = await fetchSoundCloudData(link);
-        if (scData && scData.cover) imgUrl = scData.cover;
+        imgUrl = await fetchSoundCloudCover(link);
       }
 
       if (imgUrl && container) {
@@ -886,68 +699,11 @@
       }, 200);
     }
 
-    async function playAlbum(link) {
-      let embedHtml = '';
-
-      if (link.includes('spotify.com')) {
-        let cleanUrl = link.split('?')[0].replace(/\/intl-[a-z]{2}\//i, '/');
-        const match = cleanUrl.match(/spotify\.com\/(album|track|playlist|artist)\/([a-zA-Z0-9]+)/);
-
-        if (match) {
-          const type = match[1];
-          const id = match[2];
-          const embedUrl = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
-          embedHtml = `<iframe src="${embedUrl}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
-        }
-      } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
-        const listId = extractYouTubePlaylistId(link);
-        const ytId = extractYouTubeId(link);
-        const ytParams = 'autoplay=1&enablejsapi=1';
-
-        if (listId) {
-          embedHtml = `<iframe src="https://www.youtube.com/embed/videoseries?list=${listId}&${ytParams}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
-        } else if (ytId) {
-          embedHtml = `<iframe src="https://www.youtube.com/embed/${ytId}?${ytParams}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
-        }
-      } else if (link.includes('bandcamp.com')) {
-        if (bcPlayerCache[link]) {
-          embedHtml = bcPlayerCache[link];
-        } else {
-          const bcData = await fetchBandcampData(link);
-          if (bcData && bcData.iframe) embedHtml = bcData.iframe;
-        }
-      } else if (link.includes('soundcloud.com')) {
-        const cleanLink = link.split('?')[0];
-        if (scPlayerCache[cleanLink]) {
-          embedHtml = scPlayerCache[cleanLink];
-        } else {
-          const scData = await fetchSoundCloudData(link);
-          if (scData && scData.iframe) embedHtml = scData.iframe;
-        }
-      }
-
-      if (embedHtml) {
-        playerFrameBox.innerHTML = embedHtml;
-        playerExternalLink.href = link;
-        audioPlayer.classList.remove('hidden');
-        audioPlayer.setAttribute('aria-hidden', 'false');
-      } else {
-        window.open(link, '_blank', 'noopener,noreferrer');
-      }
-    }
-
-    closePlayerBtn.addEventListener('click', () => {
-      audioPlayer.classList.add('hidden');
-      audioPlayer.setAttribute('aria-hidden', 'true');
-      playerFrameBox.innerHTML = '';
-    });
-
-    // 2. MODIFICADO: Recibe manualCover y lo asigna al dataset de cover-container
     function renderAlbums() {
       grid.innerHTML = '';
       initObserver();
 
-      let filtered = rawData.filter(([artist, album, year, link, manualCover]) => {
+      let filtered = rawData.filter(([artist, album, year, link, manualCover, id]) => {
         const fullText = `${artist} ${album} ${year}`.toLowerCase();
         const matchesSearch = fullText.includes(searchQuery.toLowerCase());
 
@@ -983,26 +739,11 @@
         return;
       }
 
-      filtered.forEach(([artist, album, year, link, manualCover]) => {
+      filtered.forEach(([artist, album, year, link, manualCover, id]) => {
         const card = document.createElement('div');
         card.className = 'card';
 
         const platform = getPlatform(link);
-        let btnHtml = '';
-
-        if (platform === 'spotify') {
-          btnHtml = `<button class="btn btn-active play-btn" data-link="${link}">▶ Reproducir (Spotify)</button>`;
-        } else if (platform === 'youtube') {
-          btnHtml = `<button class="btn btn-active play-btn" data-link="${link}">▶ Reproducir (YouTube)</button>`;
-        } else if (platform === 'bandcamp') {
-          btnHtml = `<button class="btn btn-active play-btn" data-link="${link}">▶ Reproducir (Bandcamp)</button>`;
-        } else if (platform === 'soundcloud') {
-          btnHtml = `<button class="btn btn-active play-btn" data-link="${link}">▶ Reproducir (SoundCloud)</button>`;
-        } else if (link && link.trim() !== '') {
-          btnHtml = `<a href="${link}" target="_blank" rel="noopener noreferrer" class="btn btn-active">Escuchar ↗</a>`;
-        } else {
-          btnHtml = `<span class="btn btn-disabled">Enlace pendiente</span>`;
-        }
 
         card.innerHTML = `
           <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}" data-manual-cover="${manualCover || ''}">
@@ -1017,21 +758,20 @@
               <div class="artist-links">${formatArtistLinks(artist)}</div>
             </div>
             <div>
-              ${btnHtml}
+              <span class="btn btn-active">Ver ficha y escuchar →</span>
             </div>
           </div>
         `;
 
+        // Al hacer clic en cualquier parte de la tarjeta, abre disco.html
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('artist-tag')) return; // No redirige si se hace clic en el nombre del artista para filtrar
+          window.location.href = `disco.html?id=${id}`;
+        });
+
         const coverEl = card.querySelector('.cover-container');
         if (platform !== 'none' || (manualCover && manualCover !== '')) {
           observer.observe(coverEl);
-        }
-
-        const playBtn = card.querySelector('.play-btn');
-        if (playBtn) {
-          playBtn.addEventListener('click', () => {
-            playAlbum(playBtn.dataset.link);
-          });
         }
 
         const artistTags = card.querySelectorAll('.artist-tag');
@@ -1067,7 +807,6 @@
         rawData = processSheetRows(rows);
         updateHeaderMosaic();
 
-        // Lectura de parámetros de la URL al cargar
         const urlParams = new URLSearchParams(window.location.search);
 
         if (urlParams.has('q')) {
