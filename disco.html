@@ -529,13 +529,10 @@
         activeYouTubePlaylist = listId;
 
         if (listId && (!ytId || link.includes('playlist?list='))) {
-          // Playlist directa
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${listId}&enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         } else if (ytId && listId) {
-          // Video con playlist vinculada
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?list=${listId}&enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         } else if (ytId) {
-          // Video individual
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
       } else if (link.includes('bandcamp.com')) {
@@ -579,23 +576,38 @@
 
       let lines = [];
       if (cleanData.includes('\n')) {
+        // Separación por saltos de línea
         lines = cleanData.split(/[\r\n]+/);
-      } else if (cleanData.match(/\d{1,2}:\d{2}/)) {
-        lines = cleanData.split(/(?:,\s*|;\s*)(?=\d{1,2}:\d{2})/);
+      } else if (cleanData.includes('),') || cleanData.includes(');')) {
+        // Separación tras cerrar paréntesis de tiempo: "(2:18), 02-..."
+        lines = cleanData.split(/\)\s*[,;]\s*/).map(l => l.endsWith(')') ? l : l + ')');
+      } else if (cleanData.match(/,\s*\d{1,2}[-.\s]/)) {
+        // Separación antes de un nuevo número de track: ", 02-..."
+        lines = cleanData.split(/,\s*(?=\d{1,2}[-.\s])/);
       } else {
-        lines = cleanData.split(/[\r\n;,]+/);
+        // Separación genérica por coma o punto y coma
+        lines = cleanData.split(/[,;]+/);
       }
 
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
       lines.forEach((line, index) => {
-        const timeMatch = line.match(/(?:(\d{1,2}:\d{2}(?::\d{2})?))/);
+        // Detecta el tiempo (ej: 2:18 o (2:18))
+        const timeMatch = line.match(/(?:\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?)/);
         let timeStr = timeMatch ? timeMatch[1] : '';
-        let titleStr = timeStr ? line.replace(timeStr, '').replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '').trim() : line;
 
-        // Limpia numeración redundante si ya la trae escrita en el título (ej: "1. Cancion")
-        titleStr = titleStr.replace(/^\d+[\s.-]+/, '').trim();
+        // Limpia el tiempo del título
+        let titleStr = line;
+        if (timeMatch) {
+          titleStr = titleStr.replace(timeMatch[0], '');
+        }
+
+        // Limpia guiones, comas, espacios y numeración inicial duplicada (ej: "01-", "01.")
+        titleStr = titleStr
+          .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
+          .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
+          .trim();
 
         const row = document.createElement('div');
         const isInteractive = isYouTube && (timeStr || activeYouTubePlaylist);
@@ -610,7 +622,7 @@
         `;
 
         if (isYouTube) {
-          if (timeStr && activeYouTubeId) {
+          if (timeStr && activeYouTubeId && !activeYouTubePlaylist) {
             row.title = `Saltar a ${timeStr}`;
             row.addEventListener('click', () => {
               const seconds = parseTimeToSeconds(timeStr);
