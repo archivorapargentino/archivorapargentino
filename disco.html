@@ -176,7 +176,7 @@
     }
 
     .player-container.bandcamp-active {
-      min-height: 780px;
+      min-height: 450px;
     }
 
     .player-container iframe {
@@ -335,8 +335,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    // Versión v4 de caché para forzar la actualización de los iframes viejos
-    const CACHE_KEY_BC = 'hh_bc_players_v4';
+    const CACHE_KEY_BC = 'hh_bc_players_v6';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -448,14 +447,14 @@
 
           if (iframeHtml) {
             iframeHtml = iframeHtml
-              .replace(/height="[0-9]+"/g, 'height="780"')
-              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 780px;"')
+              .replace(/height="[0-9]+"/g, 'height="450"')
+              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 450px;"')
               .replace(/\/tracklist=(false|true)\//g, '/')
-              .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/')
-              .replace(/\/artwork=(none|small)\//g, '/artwork=big/');
+              .replace(/\/artwork=(none|big|large)\//g, '/artwork=small/')
+              .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/');
 
-            if (!iframeHtml.includes('tracklist=true')) {
-              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
+            if (!iframeHtml.includes('artwork=small')) {
+              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/artwork=small/');
             }
           }
 
@@ -508,6 +507,7 @@
     }
 
     let activeYouTubeId = null;
+    let activeYouTubePlaylist = null;
 
     async function renderPlayer(link) {
       const box = document.getElementById('playerBox');
@@ -526,20 +526,26 @@
         const listId = extractYouTubePlaylistId(link);
         const ytId = extractYouTubeId(link);
         activeYouTubeId = ytId;
+        activeYouTubePlaylist = listId;
 
-        if (listId) {
+        if (listId && (!ytId || link.includes('playlist?list='))) {
+          // Playlist directa
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${listId}&enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        } else if (ytId && listId) {
+          // Video con playlist vinculada
+          embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?list=${listId}&enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         } else if (ytId) {
+          // Video individual
           embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" height="420" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
       } else if (link.includes('bandcamp.com')) {
         box.classList.add('bandcamp-active');
         if (link.includes('EmbeddedPlayer')) {
           let cleanBcUrl = link;
-          if (!cleanBcUrl.includes('tracklist=true')) {
-            cleanBcUrl = cleanBcUrl.replace(/\/size=large\//, '/size=large/tracklist=true/');
+          if (!cleanBcUrl.includes('artwork=small')) {
+            cleanBcUrl = cleanBcUrl.replace(/\/artwork=[^\/]+\//, '/').replace(/\/size=large\//, '/size=large/artwork=small/');
           }
-          embedHtml = `<iframe style="border: 0; width: 100%; height: 780px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
+          embedHtml = `<iframe style="border: 0; width: 100%; height: 450px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
         } else {
           const data = await fetchBandcampData(link);
           if (data && data.iframe) embedHtml = data.iframe;
@@ -588,8 +594,12 @@
         let timeStr = timeMatch ? timeMatch[1] : '';
         let titleStr = timeStr ? line.replace(timeStr, '').replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '').trim() : line;
 
+        // Limpia numeración redundante si ya la trae escrita en el título (ej: "1. Cancion")
+        titleStr = titleStr.replace(/^\d+[\s.-]+/, '').trim();
+
         const row = document.createElement('div');
-        row.className = `track-row ${isYouTube && timeStr ? 'interactive' : ''}`;
+        const isInteractive = isYouTube && (timeStr || activeYouTubePlaylist);
+        row.className = `track-row ${isInteractive ? 'interactive' : ''}`;
 
         row.innerHTML = `
           <div class="track-title-col">
@@ -599,15 +609,25 @@
           ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
         `;
 
-        if (isYouTube && timeStr && activeYouTubeId) {
-          row.title = `Saltar a ${timeStr}`;
-          row.addEventListener('click', () => {
-            const seconds = parseTimeToSeconds(timeStr);
-            const frame = document.getElementById('ytPlayerFrame');
-            if (frame) {
-              frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1&enablejsapi=1`;
-            }
-          });
+        if (isYouTube) {
+          if (timeStr && activeYouTubeId) {
+            row.title = `Saltar a ${timeStr}`;
+            row.addEventListener('click', () => {
+              const seconds = parseTimeToSeconds(timeStr);
+              const frame = document.getElementById('ytPlayerFrame');
+              if (frame) {
+                frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1&enablejsapi=1`;
+              }
+            });
+          } else if (activeYouTubePlaylist) {
+            row.title = `Reproducir tema ${index + 1}`;
+            row.addEventListener('click', () => {
+              const frame = document.getElementById('ytPlayerFrame');
+              if (frame) {
+                frame.src = `https://www.youtube.com/embed/videoseries?list=${activeYouTubePlaylist}&index=${index}&autoplay=1&enablejsapi=1`;
+              }
+            });
+          }
         }
 
         tracklistItems.appendChild(row);
@@ -677,7 +697,11 @@
           coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
         } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
           const ytId = extractYouTubeId(link);
-          if (ytId) coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+          if (ytId) {
+            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+          } else {
+            coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Playlist de YouTube</div>`;
+          }
         } else if (link.includes('spotify.com')) {
           const cv = await fetchSpotifyCover(link);
           if (cv) coverBox.innerHTML = `<img src="${cv}" alt="${album}">`;
