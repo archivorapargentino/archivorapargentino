@@ -335,7 +335,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v6';
+    const CACHE_KEY_BC = 'hh_bc_players_v7';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -576,16 +576,12 @@
 
       let lines = [];
       if (cleanData.includes('\n')) {
-        // Separación por saltos de línea
         lines = cleanData.split(/[\r\n]+/);
-      } else if (cleanData.includes('),') || cleanData.includes(');')) {
-        // Separación tras cerrar paréntesis de tiempo: "(2:18), 02-..."
+      } else if (cleanData.match(/(?:,\s*|\s+)(?=\d{1,2}\s*[-–—.\s])/)) {
+        lines = cleanData.split(/(?:,\s*|\s+)(?=\d{1,2}\s*[-–—.\s])/);
+      } else if (cleanData.match(/\)\s*[,;]/)) {
         lines = cleanData.split(/\)\s*[,;]\s*/).map(l => l.endsWith(')') ? l : l + ')');
-      } else if (cleanData.match(/,\s*\d{1,2}[-.\s]/)) {
-        // Separación antes de un nuevo número de track: ", 02-..."
-        lines = cleanData.split(/,\s*(?=\d{1,2}[-.\s])/);
       } else {
-        // Separación genérica por coma o punto y coma
         lines = cleanData.split(/[,;]+/);
       }
 
@@ -593,20 +589,21 @@
       if (lines.length === 0) return;
 
       lines.forEach((line, index) => {
-        // Detecta el tiempo (ej: 2:18 o (2:18))
-        const timeMatch = line.match(/(?:\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?)/);
-        let timeStr = timeMatch ? timeMatch[1] : '';
-
-        // Limpia el tiempo del título
+        // Detecta el tiempo con o sin paréntesis: (2:18) o 2:18
+        const fullTimeMatch = line.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
+        let timeStr = '';
         let titleStr = line;
-        if (timeMatch) {
-          titleStr = titleStr.replace(timeMatch[0], '');
+
+        if (fullTimeMatch) {
+          timeStr = fullTimeMatch[1];
+          titleStr = titleStr.replace(fullTimeMatch[0], '');
         }
 
-        // Limpia guiones, comas, espacios y numeración inicial duplicada (ej: "01-", "01.")
+        // Limpia numeración redundante, guiones iniciales y paréntesis vacíos residuales
         titleStr = titleStr
           .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
           .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
+          .replace(/\(\s*\)/g, '')
           .trim();
 
         const row = document.createElement('div');
@@ -622,24 +619,19 @@
         `;
 
         if (isYouTube) {
-          if (timeStr && activeYouTubeId && !activeYouTubePlaylist) {
-            row.title = `Saltar a ${timeStr}`;
-            row.addEventListener('click', () => {
+          row.title = `Reproducir tema ${index + 1}`;
+          row.addEventListener('click', () => {
+            const frame = document.getElementById('ytPlayerFrame');
+            if (!frame) return;
+
+            if (activeYouTubePlaylist) {
+              const baseId = activeYouTubeId || '';
+              frame.src = `https://www.youtube.com/embed/${baseId}?list=${activeYouTubePlaylist}&index=${index + 1}&autoplay=1&enablejsapi=1`;
+            } else if (timeStr && activeYouTubeId) {
               const seconds = parseTimeToSeconds(timeStr);
-              const frame = document.getElementById('ytPlayerFrame');
-              if (frame) {
-                frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1&enablejsapi=1`;
-              }
-            });
-          } else if (activeYouTubePlaylist) {
-            row.title = `Reproducir tema ${index + 1}`;
-            row.addEventListener('click', () => {
-              const frame = document.getElementById('ytPlayerFrame');
-              if (frame) {
-                frame.src = `https://www.youtube.com/embed/videoseries?list=${activeYouTubePlaylist}&index=${index}&autoplay=1&enablejsapi=1`;
-              }
-            });
-          }
+              frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1&enablejsapi=1`;
+            }
+          });
         }
 
         tracklistItems.appendChild(row);
