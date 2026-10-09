@@ -178,6 +178,7 @@
 
     .player-container.bandcamp-active {
       min-height: 650px;
+      border: none;
     }
 
     .player-container iframe {
@@ -336,7 +337,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v20';
+    const CACHE_KEY_BC = 'hh_bc_players_v30';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -447,16 +448,19 @@
           let iframeHtml = json?.data?.iframe?.html || null;
 
           if (iframeHtml) {
-            // Ajustar altura a 650px y asegurar tracklist=true en el iframe
-            iframeHtml = iframeHtml
-              .replace(/height="[0-9]+"/g, 'height="650"')
-              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 650px;"')
-              .replace(/\/tracklist=(false|true)\//g, '/')
-              .replace(/\/artwork=(none|small)\//g, '/artwork=big/')
-              .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/');
+            // Reemplazar src por la versión con tracklist activo
+            let srcMatch = iframeHtml.match(/src="([^"]+)"/);
+            if (srcMatch) {
+              let bcSrc = srcMatch[1];
+              bcSrc = bcSrc
+                .replace(/\/tracklist=(false|true)\//g, '/')
+                .replace(/\/size=[^\/]+\//g, '/size=large/')
+                .replace(/\/artwork=[^\/]+\//g, '/');
 
-            if (!iframeHtml.includes('tracklist=true')) {
-              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
+              if (!bcSrc.includes('tracklist=true')) {
+                bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
+              }
+              iframeHtml = `<iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="${bcSrc}" seamless loading="lazy"></iframe>`;
             }
           }
 
@@ -544,14 +548,26 @@
         box.classList.add('bandcamp-active');
         if (link.includes('EmbeddedPlayer')) {
           let cleanBcUrl = link;
-          // Forzar tracklist=true en enlaces manuales de EmbeddedPlayer
           if (!cleanBcUrl.includes('tracklist=true')) {
             cleanBcUrl = cleanBcUrl.replace(/\/size=large\//, '/size=large/tracklist=true/');
           }
-          embedHtml = `<iframe style="border: 0; width: 100%; height: 650px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
+          embedHtml = `<div style="display: flex; justify-content: center; width: 100%;">
+            <iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>
+          </div>`;
         } else {
-          const data = await fetchBandcampData(link);
-          if (data && data.iframe) embedHtml = data.iframe;
+          // Si es el disco de Willy Bronca (o cualquier URL directa de álbum)
+          const albumMatch = link.match(/album=(\d+)/);
+          if (albumMatch || link.includes('willybronca.bandcamp.com/album/mejunje-mixtape')) {
+            const albumId = albumMatch ? albumMatch[1] : '1062038038';
+            embedHtml = `<div style="display: flex; justify-content: center; width: 100%;">
+              <iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="https://bandcamp.com/EmbeddedPlayer/album=${albumId}/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=true/transparent=true/" seamless loading="lazy"></iframe>
+            </div>`;
+          } else {
+            const data = await fetchBandcampData(link);
+            if (data && data.iframe) {
+              embedHtml = `<div style="display: flex; justify-content: center; width: 100%;">${data.iframe}</div>`;
+            }
+          }
         }
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
