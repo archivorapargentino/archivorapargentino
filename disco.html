@@ -177,7 +177,7 @@
     }
 
     .player-container.bandcamp-active {
-      min-height: 450px;
+      min-height: 650px;
     }
 
     .player-container iframe {
@@ -336,7 +336,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v15';
+    const CACHE_KEY_BC = 'hh_bc_players_v20';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -447,15 +447,16 @@
           let iframeHtml = json?.data?.iframe?.html || null;
 
           if (iframeHtml) {
+            // Ajustar altura a 650px y asegurar tracklist=true en el iframe
             iframeHtml = iframeHtml
-              .replace(/height="[0-9]+"/g, 'height="450"')
-              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 450px;"')
+              .replace(/height="[0-9]+"/g, 'height="650"')
+              .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; height: 650px;"')
               .replace(/\/tracklist=(false|true)\//g, '/')
-              .replace(/\/artwork=(none|big|large)\//g, '/artwork=small/')
+              .replace(/\/artwork=(none|small)\//g, '/artwork=big/')
               .replace(/\/size=(small|medium|venti|grande)\//g, '/size=large/');
 
-            if (!iframeHtml.includes('artwork=small')) {
-              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/artwork=small/');
+            if (!iframeHtml.includes('tracklist=true')) {
+              iframeHtml = iframeHtml.replace(/\/size=large\//, '/size=large/tracklist=true/');
             }
           }
 
@@ -543,10 +544,11 @@
         box.classList.add('bandcamp-active');
         if (link.includes('EmbeddedPlayer')) {
           let cleanBcUrl = link;
-          if (!cleanBcUrl.includes('artwork=small')) {
-            cleanBcUrl = cleanBcUrl.replace(/\/artwork=[^\/]+\//, '/').replace(/\/size=large\//, '/size=large/artwork=small/');
+          // Forzar tracklist=true en enlaces manuales de EmbeddedPlayer
+          if (!cleanBcUrl.includes('tracklist=true')) {
+            cleanBcUrl = cleanBcUrl.replace(/\/size=large\//, '/size=large/tracklist=true/');
           }
-          embedHtml = `<iframe style="border: 0; width: 100%; height: 450px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
+          embedHtml = `<iframe style="border: 0; width: 100%; height: 650px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
         } else {
           const data = await fetchBandcampData(link);
           if (data && data.iframe) embedHtml = data.iframe;
@@ -593,21 +595,18 @@
         let trackVideoId = '';
         let timeStr = '';
 
-        // 1. Extraer ID de video si viene con barra (Titulo | ID)
         if (titleStr.includes('|')) {
           const parts = titleStr.split('|');
           titleStr = parts[0].trim();
           trackVideoId = parts[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
         }
 
-        // 2. Extraer minutero si existe
         const fullTimeMatch = titleStr.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
         if (fullTimeMatch) {
           timeStr = fullTimeMatch[1];
           titleStr = titleStr.replace(fullTimeMatch[0], '');
         }
 
-        // 3. Limpiar numeraciones (ej: "01-", "01.")
         titleStr = titleStr
           .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
           .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
@@ -630,7 +629,6 @@
           row.title = `Reproducir tema ${index + 1}`;
           row.addEventListener('click', () => {
             if (trackVideoId) {
-              // Reemplazo limpio y directo del video
               setYouTubePlayer(trackVideoId, 0);
             } else if (timeStr && activeYouTubeId) {
               const seconds = parseTimeToSeconds(timeStr);
