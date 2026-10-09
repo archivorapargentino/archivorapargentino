@@ -173,6 +173,7 @@
       border: 1px solid var(--border);
       background-color: transparent;
       margin-bottom: 24px;
+      min-height: 200px;
     }
 
     .player-container.bandcamp-active {
@@ -335,7 +336,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v12';
+    const CACHE_KEY_BC = 'hh_bc_players_v15';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -509,6 +510,13 @@
     let activeYouTubeId = null;
     let activeYouTubePlaylist = null;
 
+    function setYouTubePlayer(videoId, startSeconds = 0) {
+      const box = document.getElementById('playerBox');
+      const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
+      const startParam = startSeconds > 0 ? `&start=${startSeconds}` : '';
+      box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+    }
+
     async function renderPlayer(link) {
       const box = document.getElementById('playerBox');
       box.classList.remove('bandcamp-active');
@@ -533,4 +541,202 @@
         }
       } else if (link.includes('bandcamp.com')) {
         box.classList.add('bandcamp-active');
-        if (link
+        if (link.includes('EmbeddedPlayer')) {
+          let cleanBcUrl = link;
+          if (!cleanBcUrl.includes('artwork=small')) {
+            cleanBcUrl = cleanBcUrl.replace(/\/artwork=[^\/]+\//, '/').replace(/\/size=large\//, '/size=large/artwork=small/');
+          }
+          embedHtml = `<iframe style="border: 0; width: 100%; height: 450px;" src="${cleanBcUrl}" seamless loading="lazy"></iframe>`;
+        } else {
+          const data = await fetchBandcampData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
+      } else if (link.includes('soundcloud.com')) {
+        const cleanLink = link.split('?')[0];
+        if (scPlayerCache[cleanLink]) {
+          embedHtml = scPlayerCache[cleanLink];
+        } else {
+          const data = await fetchSoundCloudData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
+      }
+
+      if (embedHtml) {
+        box.innerHTML = embedHtml;
+      } else {
+        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor embebido directo. Puedes escucharlo en el botón de abajo.</div>`;
+      }
+    }
+
+    function renderTracklist(rawTracklist, isYouTube) {
+      if (!rawTracklist || typeof rawTracklist !== 'string') return;
+      
+      let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
+      if (!cleanData) return;
+
+      const tracklistBox = document.getElementById('tracklistBox');
+      const tracklistItems = document.getElementById('tracklistItems');
+      tracklistItems.innerHTML = '';
+
+      let lines = [];
+      if (cleanData.includes('\n')) {
+        lines = cleanData.split(/[\r\n]+/);
+      } else {
+        lines = cleanData.split(/[,;]+/);
+      }
+
+      lines = lines.map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      lines.forEach((line, index) => {
+        let titleStr = line;
+        let trackVideoId = '';
+        let timeStr = '';
+
+        // 1. Extraer ID de video si viene con barra (Titulo | ID)
+        if (titleStr.includes('|')) {
+          const parts = titleStr.split('|');
+          titleStr = parts[0].trim();
+          trackVideoId = parts[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
+        // 2. Extraer minutero si existe
+        const fullTimeMatch = titleStr.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
+        if (fullTimeMatch) {
+          timeStr = fullTimeMatch[1];
+          titleStr = titleStr.replace(fullTimeMatch[0], '');
+        }
+
+        // 3. Limpiar numeraciones (ej: "01-", "01.")
+        titleStr = titleStr
+          .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
+          .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
+          .replace(/\(\s*\)/g, '')
+          .trim();
+
+        const row = document.createElement('div');
+        const isInteractive = isYouTube && (trackVideoId || timeStr);
+        row.className = `track-row ${isInteractive ? 'interactive' : ''}`;
+
+        row.innerHTML = `
+          <div class="track-title-col">
+            <span class="track-num">${index + 1}.</span>
+            <span class="track-name">${titleStr}</span>
+          </div>
+          ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
+        `;
+
+        if (isYouTube) {
+          row.title = `Reproducir tema ${index + 1}`;
+          row.addEventListener('click', () => {
+            if (trackVideoId) {
+              // Reemplazo limpio y directo del video
+              setYouTubePlayer(trackVideoId, 0);
+            } else if (timeStr && activeYouTubeId) {
+              const seconds = parseTimeToSeconds(timeStr);
+              setYouTubePlayer(activeYouTubeId, seconds);
+            }
+          });
+        }
+
+        tracklistItems.appendChild(row);
+      });
+
+      tracklistBox.style.display = 'block';
+    }
+
+    async function init() {
+      const statusEl = document.getElementById('statusMessage');
+      const detailEl = document.getElementById('detailView');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const albumIndex = parseInt(urlParams.get('id'));
+
+      if (isNaN(albumIndex) || albumIndex < 0) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'ID de disco no especificado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        return;
+      }
+
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (albumIndex >= rows.length) {
+          statusEl.className = 'error-state';
+          statusEl.innerHTML = 'El disco no fue encontrado en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+          return;
+        }
+
+        const cols = rows[albumIndex];
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+        let tracklistData = (cols[4] || '').trim();
+
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        }
+
+        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = album;
+        document.getElementById('artistName').textContent = artist;
+        document.getElementById('metaYear').textContent = year || 'Sin fecha';
+        document.getElementById('metaPlatform').textContent = getPlatform(link);
+        document.getElementById('metaId').textContent = `#${albumIndex + 1}`;
+
+        const btnExt = document.getElementById('btnExternal');
+        if (link) {
+          btnExt.href = link;
+        } else {
+          btnExt.style.display = 'none';
+        }
+
+        // Carátula
+        const coverBox = document.getElementById('coverBox');
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+        } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+          const ytId = extractYouTubeId(link);
+          if (ytId) {
+            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+          } else {
+            coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Playlist de YouTube</div>`;
+          }
+        } else if (link.includes('spotify.com')) {
+          const cv = await fetchSpotifyCover(link);
+          if (cv) coverBox.innerHTML = `<img src="${cv}" alt="${album}">`;
+        } else if (link.includes('bandcamp.com')) {
+          const bc = await fetchBandcampData(link);
+          if (bc && bc.cover) coverBox.innerHTML = `<img src="${bc.cover}" alt="${album}">`;
+        } else if (link.includes('soundcloud.com')) {
+          const sc = await fetchSoundCloudData(link);
+          if (sc && sc.cover) coverBox.innerHTML = `<img src="${sc.cover}" alt="${album}">`;
+        }
+
+        // Reproductor y Tracklist
+        await renderPlayer(link);
+        const isYT = link.includes('youtube.com') || link.includes('youtu.be');
+        renderTracklist(tracklistData, isYT);
+
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
+
+      } catch (err) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'Error al cargar la ficha del archivo. Intenta recargar la página.';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
