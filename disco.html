@@ -337,7 +337,7 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v45';
+    const CACHE_KEY_BC = 'hh_bc_players_v60';
     const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
     const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
     const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
@@ -355,6 +355,20 @@
     function saveScPlayerCache(key, html) {
       scPlayerCache[key] = html;
       try { localStorage.setItem('hh_sc_players', JSON.stringify(scPlayerCache)); } catch (e) {}
+    }
+
+    // Petición con límite de 2.5s para no congelar la web si una API falla
+    async function fetchWithTimeout(url, ms = 2500) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), ms);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(id);
+        return response;
+      } catch (err) {
+        clearTimeout(id);
+        return null;
+      }
     }
 
     function parseCSV(text) {
@@ -423,8 +437,8 @@
     async function fetchSpotifyCover(url) {
       if (coverCache[url]) return coverCache[url];
       try {
-        const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-        if (res.ok) {
+        const res = await fetchWithTimeout(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+        if (res && res.ok) {
           const data = await res.json();
           if (data?.thumbnail_url) {
             saveCoverCache(url, data.thumbnail_url);
@@ -441,8 +455,8 @@
       }
 
       try {
-        const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
-        if (res.ok) {
+        const res = await fetchWithTimeout(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
+        if (res && res.ok) {
           const json = await res.json();
           const imgUrl = json?.data?.image?.url || null;
           let iframeHtml = json?.data?.iframe?.html || null;
@@ -450,8 +464,166 @@
           if (iframeHtml) {
             let srcMatch = iframeHtml.match(/src="([^"]+)"/);
             if (srcMatch) {
-              let bcSrc = srcMatch[1];
-              bcSrc = bcSrc
+              let bcSrc = srcMatch[1]
                 .replace(/\/tracklist=(false|true)\//g, '/')
                 .replace(/\/size=[^\/]+\//g, '/size=large/')
                 .replace(/\/artwork=[^\/]+\//g, '/');
+
+              if (!bcSrc.includes('tracklist=true')) {
+                bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
+              }
+              iframeHtml = `<iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="${bcSrc}" seamless loading="lazy"></iframe>`;
+            }
+          }
+
+          if (imgUrl) saveCoverCache(url, imgUrl);
+          if (iframeHtml) saveBcPlayerCache(url, iframeHtml);
+
+          return { cover: imgUrl, iframe: iframeHtml };
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function fetchSoundCloudData(url) {
+      const cleanUrl = url.split('?')[0];
+      if (coverCache[cleanUrl] && scPlayerCache[cleanUrl]) {
+        return { cover: coverCache[cleanUrl], iframe: scPlayerCache[cleanUrl] };
+      }
+      let imgUrl = null, iframeHtml = null;
+      try {
+        const res = await fetchWithTimeout(`https://soundcloud.com/oembed?format=json&show_artwork=true&url=${encodeURIComponent(cleanUrl)}`);
+        if (res && res.ok) {
+          const data = await res.json();
+          imgUrl = data.thumbnail_url || null;
+          iframeHtml = data.html || null;
+          if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/g, 'height="450"');
+        }
+      } catch (e) {}
+
+      if (imgUrl && imgUrl.includes('-large.jpg')) {
+        imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
+      }
+
+      if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
+      if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
+      return { cover: imgUrl, iframe: iframeHtml };
+    }
+
+    let activeYouTubeId = null;
+    let activeYouTubePlaylist = null;
+
+    function setYouTubePlayer(videoId, startSeconds = 0) {
+      const box = document.getElementById('playerBox');
+      const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
+      const startParam = startSeconds > 0 ? `&start=${startSeconds}` : '';
+      box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+    }
+
+    async function renderPlayer(link) {
+      const box = document.getElementById('playerBox');
+      box.classList.remove('bandcamp-active');
+      let embedHtml = '';
+
+      if (link.includes('spotify.com')) {
+        let cleanUrl = link.split('?')[0].replace(/\/intl-[a-z]{2}\//i, '/');
+        const match = cleanUrl.match(/spotify\.com\/(album|track|playlist|artist)\/([a-zA-Z0-9]+)/);
+        if (match) {
+          const type = match[1];
+          const id = match[2];
+          embedHtml = `<iframe src="https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0" height="420" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+      } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+        activeYouTubePlaylist = extractYouTubePlaylistId(link);
+        activeYouTubeId = extractYouTubeId(link);
+
+        if (activeYouTubeId) {
+          embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${activeYouTubeId}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        } else if (activeYouTubePlaylist) {
+          embedHtml = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${activeYouTubePlaylist}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        }
+      } else if (link.includes('bandcamp.com')) {
+        box.classList.add('bandcamp-active');
+        let bcSrc = '';
+
+        if (link.includes('EmbeddedPlayer')) {
+          bcSrc = link;
+        } else {
+          // Intentar obtenerlo mediante la API con timeout
+          const data = await fetchBandcampData(link);
+          if (data && data.iframe) {
+            const match = data.iframe.match(/src="([^"]+)"/);
+            if (match) bcSrc = match[1];
+          }
+        }
+
+        if (bcSrc) {
+          bcSrc = bcSrc
+            .replace(/\/tracklist=(false|true)\//g, '/')
+            .replace(/\/artwork=[^\/]+\//g, '/')
+            .replace(/\/size=[^\/]+\//g, '/size=large/');
+
+          if (!bcSrc.includes('tracklist=true')) {
+            bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
+          }
+
+          embedHtml = `<div style="display: flex; justify-content: center; width: 100%;">
+            <iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="${bcSrc}" seamless loading="lazy"></iframe>
+          </div>`;
+        } else {
+          embedHtml = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+            Para reproducir este álbum de Bandcamp, ábrelo en el botón inferior o agrega el enlace EmbeddedPlayer en la planilla.
+          </div>`;
+        }
+      } else if (link.includes('soundcloud.com')) {
+        const cleanLink = link.split('?')[0];
+        if (scPlayerCache[cleanLink]) {
+          embedHtml = scPlayerCache[cleanLink];
+        } else {
+          const data = await fetchSoundCloudData(link);
+          if (data && data.iframe) embedHtml = data.iframe;
+        }
+      }
+
+      if (embedHtml) {
+        box.innerHTML = embedHtml;
+      } else {
+        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor embebido directo. Puedes escucharlo en el botón de abajo.</div>`;
+      }
+    }
+
+    function renderTracklist(rawTracklist, isYouTube) {
+      if (!rawTracklist || typeof rawTracklist !== 'string') return;
+      
+      let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
+      if (!cleanData) return;
+
+      const tracklistBox = document.getElementById('tracklistBox');
+      const tracklistItems = document.getElementById('tracklistItems');
+      tracklistItems.innerHTML = '';
+
+      let lines = [];
+      if (cleanData.includes('\n')) {
+        lines = cleanData.split(/[\r\n]+/);
+      } else {
+        lines = cleanData.split(/[,;]+/);
+      }
+
+      lines = lines.map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      lines.forEach((line, index) => {
+        let titleStr = line;
+        let trackVideoId = '';
+        let timeStr = '';
+
+        if (titleStr.includes('|')) {
+          const parts = titleStr.split('|');
+          titleStr = parts[0].trim();
+          trackVideoId = parts[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
+        const fullTimeMatch = titleStr.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
+        if (fullTimeMatch) {
+          timeStr = fullTimeMatch[1];
+          titleStr = titleStr.replace(fullTimeMatch[0],
