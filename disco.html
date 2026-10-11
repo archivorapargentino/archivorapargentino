@@ -337,38 +337,8 @@
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    const CACHE_KEY_BC = 'hh_bc_players_v80';
-    const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
-    const bcPlayerCache = JSON.parse(localStorage.getItem(CACHE_KEY_BC) || '{}');
-    const scPlayerCache = JSON.parse(localStorage.getItem('hh_sc_players') || '{}');
-
-    function saveCoverCache(key, url) {
-      coverCache[key] = url;
-      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
-    }
-
-    function saveBcPlayerCache(key, html) {
-      bcPlayerCache[key] = html;
-      try { localStorage.setItem(CACHE_KEY_BC, JSON.stringify(bcPlayerCache)); } catch (e) {}
-    }
-
-    function saveScPlayerCache(key, html) {
-      scPlayerCache[key] = html;
-      try { localStorage.setItem('hh_sc_players', JSON.stringify(scPlayerCache)); } catch (e) {}
-    }
-
-    async function fetchWithTimeout(url, ms = 2000) {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), ms);
-      try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-        return response;
-      } catch (err) {
-        clearTimeout(id);
-        return null;
-      }
-    }
+    let activeYouTubeId = null;
+    let activeYouTubePlaylist = null;
 
     function parseCSV(text) {
       const rows = [];
@@ -433,85 +403,6 @@
       return 0;
     }
 
-    async function fetchSpotifyCover(url) {
-      if (coverCache[url]) return coverCache[url];
-      try {
-        const res = await fetchWithTimeout(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-        if (res && res.ok) {
-          const data = await res.json();
-          if (data?.thumbnail_url) {
-            saveCoverCache(url, data.thumbnail_url);
-            return data.thumbnail_url;
-          }
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    async function fetchBandcampData(url) {
-      if (bcPlayerCache[url] && coverCache[url]) {
-        return { cover: coverCache[url], iframe: bcPlayerCache[url] };
-      }
-
-      try {
-        const res = await fetchWithTimeout(`https://api.microlink.io?url=${encodeURIComponent(url)}&iframe=true`);
-        if (res && res.ok) {
-          const json = await res.json();
-          const imgUrl = json?.data?.image?.url || null;
-          let iframeHtml = json?.data?.iframe?.html || null;
-
-          if (iframeHtml) {
-            let srcMatch = iframeHtml.match(/src="([^"]+)"/);
-            if (srcMatch) {
-              let bcSrc = srcMatch[1]
-                .replace(/\/tracklist=(false|true)\//g, '/')
-                .replace(/\/size=[^\/]+\//g, '/size=large/')
-                .replace(/\/artwork=[^\/]+\//g, '/');
-
-              if (!bcSrc.includes('tracklist=true')) {
-                bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
-              }
-              iframeHtml = `<iframe style="border: 0; width: 100%; max-width: 380px; height: 650px;" src="${bcSrc}" seamless loading="lazy"></iframe>`;
-            }
-          }
-
-          if (imgUrl) saveCoverCache(url, imgUrl);
-          if (iframeHtml) saveBcPlayerCache(url, iframeHtml);
-
-          return { cover: imgUrl, iframe: iframeHtml };
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    async function fetchSoundCloudData(url) {
-      const cleanUrl = url.split('?')[0];
-      if (coverCache[cleanUrl] && scPlayerCache[cleanUrl]) {
-        return { cover: coverCache[cleanUrl], iframe: scPlayerCache[cleanUrl] };
-      }
-      let imgUrl = null, iframeHtml = null;
-      try {
-        const res = await fetchWithTimeout(`https://soundcloud.com/oembed?format=json&show_artwork=true&url=${encodeURIComponent(cleanUrl)}`);
-        if (res && res.ok) {
-          const data = await res.json();
-          imgUrl = data.thumbnail_url || null;
-          iframeHtml = data.html || null;
-          if (iframeHtml) iframeHtml = iframeHtml.replace(/height="[0-9]+"/g, 'height="450"');
-        }
-      } catch (e) {}
-
-      if (imgUrl && imgUrl.includes('-large.jpg')) {
-        imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
-      }
-
-      if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
-      if (iframeHtml) saveScPlayerCache(cleanUrl, iframeHtml);
-      return { cover: imgUrl, iframe: iframeHtml };
-    }
-
-    let activeYouTubeId = null;
-    let activeYouTubePlaylist = null;
-
     function setYouTubePlayer(videoId, startSeconds = 0) {
       const box = document.getElementById('playerBox');
       const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -519,7 +410,7 @@
       box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
     }
 
-    function renderPlayer(link) {
+    function renderPlayer(link, firstTrackVideoId) {
       const box = document.getElementById('playerBox');
       box.classList.remove('bandcamp-active');
 
@@ -533,8 +424,8 @@
           return;
         }
       } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+        activeYouTubeId = extractYouTubeId(link) || firstTrackVideoId;
         activeYouTubePlaylist = extractYouTubePlaylistId(link);
-        activeYouTubeId = extractYouTubeId(link);
 
         if (activeYouTubeId) {
           box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${activeYouTubeId}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
@@ -545,8 +436,8 @@
       } else if (link.includes('bandcamp.com')) {
         box.classList.add('bandcamp-active');
 
-        if (link.includes('EmbeddedPlayer')) {
-          let bcSrc = link;
+        let bcSrc = link;
+        if (bcSrc.includes('EmbeddedPlayer')) {
           if (!bcSrc.includes('tracklist=true')) {
             bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
           }
@@ -556,28 +447,10 @@
           return;
         }
 
-        // Intenta cargar datos de Bandcamp en segundo plano
-        fetchBandcampData(link).then(data => {
-          if (data && data.iframe) {
-            box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">${data.iframe}</div>`;
-          } else {
-            box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
-              Álbum de Bandcamp disponible en el enlace de abajo.
-            </div>`;
-          }
-        });
-        return;
-      } else if (link.includes('soundcloud.com')) {
-        const cleanLink = link.split('?')[0];
-        if (scPlayerCache[cleanLink]) {
-          box.innerHTML = scPlayerCache[cleanLink];
-          return;
-        }
-        fetchSoundCloudData(link).then(data => {
-          if (data && data.iframe) {
-            box.innerHTML = data.iframe;
-          }
-        });
+        // Si es una URL de álbum de Bandcamp convencional
+        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+          Para escuchar este álbum completo de Bandcamp, haz clic en el botón inferior o usa el link EmbeddedPlayer en la planilla.
+        </div>`;
         return;
       }
 
@@ -596,13 +469,7 @@
       const tracklistItems = document.getElementById('tracklistItems');
       tracklistItems.innerHTML = '';
 
-      let lines = [];
-      if (cleanData.includes('\n')) {
-        lines = cleanData.split(/[\r\n]+/);
-      } else {
-        lines = cleanData.split(/[,;]+/);
-      }
-
+      let lines = cleanData.includes('\n') ? cleanData.split(/[\r\n]+/) : cleanData.split(/[,;]+/);
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
@@ -700,7 +567,6 @@
           album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        // Renderizado instantáneo de la ficha
         document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
         document.getElementById('albumTitle').textContent = album;
         document.getElementById('artistName').textContent = artist;
@@ -715,38 +581,38 @@
           btnExt.style.display = 'none';
         }
 
-        statusEl.style.display = 'none';
-        detailEl.style.display = 'grid';
-
-        // Carátula
-        const coverBox = document.getElementById('coverBox');
-        if (manualCover) {
-          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
-        } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
-          const ytId = extractYouTubeId(link);
-          if (ytId) {
-            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
-          } else {
-            coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Playlist de YouTube</div>`;
+        // Extraer primer ID del tracklist si existe (para YouTube)
+        let firstTrackId = '';
+        if (tracklistData && tracklistData.includes('|')) {
+          const firstLine = tracklistData.split(/[\r\n]+/)[0];
+          if (firstLine.includes('|')) {
+            firstTrackId = firstLine.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
           }
-        } else if (link.includes('spotify.com')) {
-          fetchSpotifyCover(link).then(cv => {
-            if (cv) coverBox.innerHTML = `<img src="${cv}" alt="${album}">`;
-          });
-        } else if (link.includes('bandcamp.com')) {
-          fetchBandcampData(link).then(bc => {
-            if (bc && bc.cover) coverBox.innerHTML = `<img src="${bc.cover}" alt="${album}">`;
-          });
-        } else if (link.includes('soundcloud.com')) {
-          fetchSoundCloudData(link).then(sc => {
-            if (sc && sc.cover) coverBox.innerHTML = `<img src="${sc.cover}" alt="${album}">`;
-          });
         }
 
-        // Reproductor y Tracklist
-        renderPlayer(link);
+        // Portada
+        const coverBox = document.getElementById('coverBox');
+        const ytId = extractYouTubeId(link) || firstTrackId;
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+        } else if (ytId) {
+          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+        } else if (link.includes('spotify.com')) {
+          fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
+            .then(r => r.json())
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
+            .catch(() => {});
+        } else {
+          coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
+        }
+
+        // Reproductor y Lista
+        renderPlayer(link, firstTrackId);
         const isYT = link.includes('youtube.com') || link.includes('youtu.be');
         renderTracklist(tracklistData, isYT);
+
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
 
       } catch (err) {
         statusEl.className = 'error-state';
