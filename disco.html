@@ -175,7 +175,7 @@
     }
 
     .player-container.bandcamp-active {
-      min-height: 500px;
+      min-height: 680px;
       border: none;
     }
 
@@ -435,19 +435,18 @@
             bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
           }
           box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">
-            <iframe style="border: 0; width: 100%; max-width: 400px; height: 500px;" src="${bcSrc}" seamless loading="lazy"></iframe>
+            <iframe style="border: 0; width: 100%; max-width: 400px; height: 680px;" src="${bcSrc}" seamless loading="lazy"></iframe>
           </div>`;
           return;
         }
 
-        // Intento directo vía oEmbed oficial de Bandcamp (con fallback inmediato)
         fetch(`https://bandcamp.com/api/oembed/1/json?url=${encodeURIComponent(link)}`)
           .then(r => r.json())
           .then(data => {
             if (data && data.html) {
               let cleanHtml = data.html
-                .replace(/height="[0-9]+"/g, 'height="500"')
-                .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; max-width: 400px; height: 500px; display: block; margin: 0 auto;"');
+                .replace(/height="[0-9]+"/g, 'height="680"')
+                .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; max-width: 400px; height: 680px; display: block; margin: 0 auto;"');
               box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">${cleanHtml}</div>`;
             } else {
               box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
@@ -583,7 +582,6 @@
           album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        // RENDER INMEDIATO DE DATOS (Descongela la pantalla al instante)
         document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
         document.getElementById('albumTitle').textContent = album;
         document.getElementById('artistName').textContent = artist;
@@ -598,11 +596,9 @@
           btnExt.style.display = 'none';
         }
 
-        // Ocultar mensaje de carga y mostrar ficha
         statusEl.style.display = 'none';
         detailEl.style.display = 'grid';
 
-        // Extraer primer ID para YouTube si existe en el tracklist
         let firstTrackId = '';
         if (tracklistData && tracklistData.includes('|')) {
           const firstLine = tracklistData.split(/[\r\n]+/)[0];
@@ -611,7 +607,6 @@
           }
         }
 
-        // Carátula inmediata sin llamadas bloqueantes
         const coverBox = document.getElementById('coverBox');
         const ytId = extractYouTubeId(link) || firstTrackId;
         if (manualCover) {
@@ -632,7 +627,6 @@
           coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
         }
 
-        // Reproductor y lista de temas
         renderPlayer(link, firstTrackId);
         renderTracklist(tracklistData, link.includes('youtube.com') || link.includes('youtu.be'));
 
