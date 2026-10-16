@@ -170,6 +170,14 @@
       border-color: #000000;
     }
 
+    /* Estilo para los campos bloqueados / solo lectura */
+    input[readonly], textarea[readonly], select:disabled {
+      background-color: var(--border-subtle) !important;
+      color: var(--text-muted) !important;
+      cursor: not-allowed;
+      border-color: var(--border);
+    }
+
     textarea {
       resize: vertical;
       min-height: 90px;
@@ -218,6 +226,16 @@
       color: #991b1b;
       border: 1px solid #fecaca;
     }
+
+    .notice-box {
+      margin-top: 24px;
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      background-color: var(--border-subtle);
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -238,7 +256,7 @@
     </header>
 
     <div id="editAlert" class="alert-banner">
-      Abierto para <strong>completar datos faltantes o sugerir modificaciones</strong> sobre la ficha <span id="badgeId">#</span>. Los campos con datos ya están cargados. Utilizá el campo de notas para proponer cambios sobre los datos preexistentes.
+      Abierto para <strong>completar datos faltantes o sugerir rectificaciones</strong> sobre la ficha <span id="badgeId">#</span>. Los campos con datos ya cargados se encuentran bloqueados. Podés cargar los datos restantes y usar el campo de notas para proponer cambios sobre los preexistentes.
     </div>
 
     <div class="form-card">
@@ -322,12 +340,12 @@
           </div>
         </div>
 
-        <!-- Notas y Contacto -->
+        <!-- Información Adicional -->
         <div class="section-title">Información Adicional</div>
 
         <div class="form-group">
           <label for="notas" id="labelNotas">Notas o Datos Adicionales</label>
-          <textarea id="notas" placeholder="Músicos invitados, beatmakers, contexto de grabación o correcciones de datos preexistentes."></textarea>
+          <textarea id="notas" placeholder="Músicos invitados, beatmakers, contexto de grabación, etc."></textarea>
           <div class="help-text" id="helpNotas">Añadí información complementaria o detalles que precisen la catalogación.</div>
         </div>
 
@@ -340,10 +358,14 @@
         <div id="statusMessage"></div>
       </form>
     </div>
+
+    <div class="notice-box">
+      <strong>Nota:</strong> Los datos aportados y las modificaciones sugeridas son verificados antes de consolidarse en la base pública del archivo[cite: 2].
+    </div>
   </main>
 
   <script>
-    // PEGA AQUÍ LA URL DE TU IMPLEMENTACIÓN DE APPS SCRIPT
+    // PEGA AQUÍ LA URL DE TU WEB APP DE APPS SCRIPT
     const APPS_SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -355,23 +377,36 @@
         document.getElementById('badgeId').textContent = `#${discoId}`;
         document.getElementById('editAlert').style.display = 'block';
 
-        // Adaptar textos para el modo modificación/completar datos
-        document.getElementById('pageTitle').textContent = 'Completar o Corregir Obra';
-        document.getElementById('pageDesc').textContent = 'Agregá los datos territoriales y técnicos faltantes o proponé modificaciones sobre lo ya cargado.';
+        // Adaptar textos para el modo de corrección / completar
+        document.getElementById('pageTitle').textContent = 'Completar o Rectificar Ficha';
+        document.getElementById('pageDesc').textContent = 'Los datos preexistentes están bloqueados. Completá la información faltante o proponé cambios en las notas.';
         document.getElementById('labelNotas').textContent = 'Propuestas de modificación / Notas adicionales';
-        document.getElementById('helpNotas').textContent = 'Detallá aquí qué datos preexistentes necesitás rectificar (año, enlace, nombres, etc.).';
-        document.getElementById('notas').placeholder = 'Ej: El año correcto es 2013 y en el tema 2 participa...';
-        document.getElementById('btnSubmit').textContent = 'Enviar corrección / datos faltantes';
+        document.getElementById('helpNotas').textContent = 'Detallá aquí qué datos bloqueados necesitás corregir (año, enlace, nombres, etc.).';
+        document.getElementById('notas').placeholder = 'Ej: El año correcto de salida es 2013 y en el tema 2 participa...';
+        document.getElementById('btnSubmit').textContent = 'Enviar datos faltantes / corrección';
 
-        // Prellenar los campos que ya venían en la URL
-        if (params.get('artista')) document.getElementById('artista').value = params.get('artista');
-        if (params.get('titulo')) document.getElementById('titulo').value = params.get('titulo');
-        if (params.get('anio')) document.getElementById('anio').value = params.get('anio');
-        if (params.get('enlace')) document.getElementById('enlace').value = params.get('enlace');
-        if (params.get('provincia')) document.getElementById('provincia').value = params.get('provincia');
-        if (params.get('ciudad')) document.getElementById('ciudad').value = params.get('ciudad');
-        if (params.get('barrio')) document.getElementById('barrio').value = params.get('barrio');
-        if (params.get('crew')) document.getElementById('crew').value = params.get('crew');
+        // Función que rellena y BLOQUEA el campo únicamente si ya contiene un dato
+        const fillAndLock = (elemId, paramKey, isSelect = false) => {
+          const val = params.get(paramKey);
+          const elem = document.getElementById(elemId);
+          if (val && elem) {
+            elem.value = val;
+            if (isSelect) {
+              elem.disabled = true;
+            } else {
+              elem.readOnly = true;
+            }
+          }
+        };
+
+        fillAndLock('artista', 'artista');
+        fillAndLock('titulo', 'titulo');
+        fillAndLock('anio', 'anio');
+        fillAndLock('enlace', 'enlace');
+        fillAndLock('provincia', 'provincia', true);
+        fillAndLock('ciudad', 'ciudad');
+        fillAndLock('barrio', 'barrio');
+        fillAndLock('crew', 'crew');
       }
     });
 
@@ -386,6 +421,8 @@
       btn.textContent = 'Enviando a Google Sheets...';
       status.style.display = 'none';
 
+      // Leemos valores (incluso de selects bloqueados)
+      const provinciaElem = document.getElementById('provincia');
       const payload = {
         es_correccion: Boolean(discoId),
         disco_id: discoId || null,
@@ -393,7 +430,7 @@
         titulo: document.getElementById('titulo').value.trim(),
         anio: document.getElementById('anio').value.trim(),
         enlace: document.getElementById('enlace').value.trim(),
-        provincia: document.getElementById('provincia').value,
+        provincia: provinciaElem.value,
         ciudad: document.getElementById('ciudad').value.trim(),
         barrio: document.getElementById('barrio').value.trim(),
         crew: document.getElementById('crew').value.trim(),
@@ -404,7 +441,7 @@
       try {
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // Evita problemas de CORS al escribir en Google Apps Script
+          mode: 'no-cors', // Evita bloqueos de CORS con Google Apps Script
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
@@ -422,7 +459,7 @@
         status.textContent = 'Ocurrió un error al enviar. Intentá nuevamente.';
         status.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = discoId ? 'Reintentar envío de corrección' : 'Reintentar Registro';
+        btn.textContent = discoId ? 'Reintentar envío' : 'Reintentar Registro';
       }
     }
   </script>
