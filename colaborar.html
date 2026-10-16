@@ -130,11 +130,12 @@
     }
 
     /* Campos bloqueados */
-    input[readonly], textarea[readonly], select:disabled {
+    .locked-input {
       background-color: var(--border-subtle) !important;
       color: var(--text-muted) !important;
       cursor: not-allowed;
-      border-color: var(--border);
+      border-color: var(--border) !important;
+      pointer-events: none; /* Bloquea edición y clicks sin deshabilitar el envío */
     }
 
     textarea {
@@ -184,9 +185,19 @@
       border-bottom: 1px solid var(--text);
       padding-bottom: 2px;
     }
+
+    #hidden_iframe {
+      display: none;
+      width: 0;
+      height: 0;
+      border: 0;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Iframe receptor para evitar recarga de pantalla -->
+  <iframe name="hidden_iframe" id="hidden_iframe"></iframe>
 
   <nav class="top-nav">
     <a href="index.html" class="nav-link">Catálogo</a>
@@ -202,39 +213,40 @@
       Completando información de la ficha técnica <strong id="badgeId">#</strong>. Los datos preexistentes se encuentran bloqueados. Podés agregar la información faltante y usar el campo de notas para proponer cambios sobre los datos cargados.
     </div>
 
-    <form id="collabForm">
+    <!-- Envío nativo a Google Forms -->
+    <form id="collabForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse" method="POST" target="hidden_iframe">
       <input type="hidden" id="disco_id" value="">
 
       <div class="form-group">
         <label for="artist">Artista o Agrupación *</label>
         <span class="field-hint">Ejemplo: Actitud María Marta, Illya Kuryaki & The Valderramas, T&K</span>
-        <input type="text" id="artist" required placeholder="Nombre del artista o grupo">
+        <input type="text" id="artist" name="entry.2128002775" required placeholder="Nombre del artista o grupo">
       </div>
 
       <div class="form-group">
         <label for="album">Título del Disco u Obra *</label>
         <span class="field-hint">Nombre del álbum, EP o mixtape</span>
-        <input type="text" id="album" required placeholder="Título de la obra">
+        <input type="text" id="album" name="entry.1799273274" required placeholder="Título de la obra">
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="year">Año de Publicación</label>
           <span class="field-hint">Ejemplo: 1997 o 1998?</span>
-          <input type="text" id="year" placeholder="Ej: 1997">
+          <input type="text" id="year" name="entry.1887365238" placeholder="Ej: 1997">
         </div>
 
         <div class="form-group">
           <label for="link">Enlace de Audio *</label>
           <span class="field-hint">Spotify, YouTube o Bandcamp</span>
-          <input type="url" id="link" required placeholder="https://open.spotify.com/... o https://youtube.com/...">
+          <input type="url" id="link" name="entry.1726588647" required placeholder="https://open.spotify.com/... o https://youtube.com/...">
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="provincia">Provincia</label>
-          <select id="provincia">
+          <select id="provincia" name="entry.1497464508">
             <option value="" selected>Seleccionar provincia...</option>
             <option value="CABA">CABA</option>
             <option value="Buenos Aires">Buenos Aires</option>
@@ -266,7 +278,7 @@
         <div class="form-group">
           <label for="ciudad">Ciudad / Municipio / Partido</label>
           <span class="field-hint">Ej: Lanús, Morón, Rosario, CABA</span>
-          <input type="text" id="ciudad" placeholder="Ciudad o partido">
+          <input type="text" id="ciudad" name="entry.1311656962" placeholder="Ciudad o partido">
         </div>
       </div>
 
@@ -274,25 +286,25 @@
         <div class="form-group">
           <label for="barrio">Barrio / Localidad / Zona</label>
           <span class="field-hint">Ej: Valentín Alsina, La Boca</span>
-          <input type="text" id="barrio" placeholder="Barrio específico">
+          <input type="text" id="barrio" name="entry.747892958" placeholder="Barrio específico">
         </div>
 
         <div class="form-group">
           <label for="crew">Crew / Sello</label>
           <span class="field-hint">Ej: Pantera Records, Raptores</span>
-          <input type="text" id="crew" placeholder="Crew o sello discográfico">
+          <input type="text" id="crew" name="entry.1887116427" placeholder="Crew o sello discográfico">
         </div>
       </div>
 
       <div class="form-group">
         <label for="notes" id="lblNotes">Notas o Datos Adicionales</label>
-        <span class="field-hint" id="hintNotes">Formato original (casete, CD), contexto o aclaraciones.</span>
-        <textarea id="notes" placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
+        <span class="field-hint" id="hintNotes">Formato original (casete, CD), contexto o sugerencia de corrección.</span>
+        <textarea id="notes" name="entry.800104356" placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
       </div>
 
       <div class="form-group">
         <label for="contact">Tu Nombre o Contacto (Opcional)</label>
-        <input type="text" id="contact" placeholder="Tu nombre, usuario o email para darte crédito">
+        <input type="text" id="contact" name="entry.395661196" placeholder="Tu nombre, usuario o email para darte crédito">
       </div>
 
       <button type="submit" id="submitBtn" class="submit-btn">Enviar propuesta al archivo</button>
@@ -307,16 +319,18 @@
   </main>
 
   <script>
-    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse';
+    let submitted = false;
 
-    const FIELD_IDS = {
-      artist:  'entry.2128002775',
-      album:   'entry.1799273274',
-      year:    'entry.1887365238',
-      link:    'entry.1726588647',
-      notes:   'entry.800104356',
-      contact: 'entry.395661196'
-    };
+    // Detecta cuando Google Forms procesó el envío dentro del iframe
+    document.getElementById('hidden_iframe').addEventListener('load', () => {
+      if (submitted) {
+        document.getElementById('collabForm').style.display = 'none';
+        const alertBox = document.getElementById('editAlert');
+        if (alertBox) alertBox.style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+      }
+    });
 
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
@@ -328,93 +342,51 @@
         document.getElementById('editAlert').style.display = 'block';
 
         document.getElementById('pageTitle').textContent = 'Completar o Rectificar Ficha';
-        document.getElementById('pageLead').textContent = 'Los campos preexistentes están bloqueados. Completá los datos territoriales/técnicos restantes o proponé correcciones en notas.';
+        document.getElementById('pageLead').textContent = 'Los campos preexistentes están bloqueados. Completá los datos territoriales y técnicos restantes o proponé correcciones en notas.';
         document.getElementById('lblNotes').textContent = 'Propuestas de modificación o notas adicionales';
         document.getElementById('hintNotes').textContent = 'Indicá aquí qué datos de los ya registrados necesitan corregirse.';
-        document.getElementById('notes').placeholder = 'Ej: El año correcto de salida es 2018 y el sello productor es...';
-        document.getElementById('submitBtn').textContent = 'Enviar corrección / datos faltantes';
+        document.getElementById('notes').placeholder = 'Ej: El año correcto de salida es 2018 y el productor principal es...';
+        document.getElementById('submitBtn').textContent = 'Enviar datos faltantes / corrección';
 
-        // Bloqueo de campos existentes
-        const fillAndLock = (elemId, val) => {
+        // Bloqueo visual sin deshabilitar para asegurar que el dato viaje a Google Forms
+        const lockField = (elemId, val) => {
           const elem = document.getElementById(elemId);
           if (val && elem) {
             elem.value = val;
             elem.readOnly = true;
+            elem.classList.add('locked-input');
           }
         };
 
-        fillAndLock('artist', params.get('artista'));
-        fillAndLock('album', params.get('titulo'));
-        fillAndLock('year', params.get('anio'));
-        fillAndLock('link', params.get('enlace'));
-        fillAndLock('crew', params.get('crew'));
+        lockField('artist', params.get('artista'));
+        lockField('album', params.get('titulo'));
+        lockField('year', params.get('anio'));
+        lockField('link', params.get('enlace'));
+        lockField('crew', params.get('crew'));
 
-        // Ubicación
         const ubicacionParam = params.get('ubicacion');
         if (ubicacionParam) {
-          fillAndLock('ciudad', ubicacionParam);
+          lockField('ciudad', ubicacionParam);
         }
       }
     });
 
     const form = document.getElementById('collabForm');
     const submitBtn = document.getElementById('submitBtn');
-    const successMsg = document.getElementById('successMsg');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    form.addEventListener('submit', () => {
+      submitted = true;
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando...';
+      submitBtn.textContent = 'Enviando a la planilla...';
 
+      // Incluye el tag de revisión si viene de un disco existente
       const discoId = document.getElementById('disco_id').value;
-      const artist = document.getElementById('artist').value.trim();
-      const album = document.getElementById('album').value.trim();
-      const year = document.getElementById('year').value.trim();
-      const link = document.getElementById('link').value.trim();
-      const provincia = document.getElementById('provincia').value;
-      const ciudad = document.getElementById('ciudad').value.trim();
-      const barrio = document.getElementById('barrio').value.trim();
-      const crew = document.getElementById('crew').value.trim();
-      let notes = document.getElementById('notes').value.trim();
-      const contact = document.getElementById('contact').value.trim();
-
-      // Consolidar datos territoriales dentro de las notas para el Google Form
-      const extras = [];
-      if (discoId) extras.push(`[REVISIÓN FICHA #${discoId}]`);
-      if (provincia) extras.push(`Provincia: ${provincia}`);
-      if (ciudad) extras.push(`Ciudad/Municipio: ${ciudad}`);
-      if (barrio) extras.push(`Barrio: ${barrio}`);
-      if (crew) extras.push(`Crew/Sello: ${crew}`);
-
-      let finalNotes = notes;
-      if (extras.length > 0) {
-        finalNotes = extras.join(' | ') + (notes ? `\nNotas adicionales: ${notes}` : '');
-      }
-
-      const formData = new FormData();
-      formData.append(FIELD_IDS.artist, artist);
-      formData.append(FIELD_IDS.album, album);
-      formData.append(FIELD_IDS.year, year);
-      formData.append(FIELD_IDS.link, link);
-      formData.append(FIELD_IDS.notes, finalNotes);
-      formData.append(FIELD_IDS.contact, contact);
-
-      try {
-        await fetch(GOOGLE_FORM_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: formData
-        });
-
-        form.reset();
-        form.style.display = 'none';
-        document.getElementById('editAlert').style.display = 'none';
-        successMsg.style.display = 'block';
-        window.scrollTo({ top: 100, behavior: 'smooth' });
-      } catch (err) {
-        alert('Ocurrió un error al enviar el formulario. Por favor, intenta nuevamente.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = discoId ? 'Reintentar envío de corrección' : 'Enviar propuesta al archivo';
+      const notesEl = document.getElementById('notes');
+      if (discoId && notesEl) {
+        const prefijo = `[REVISIÓN / FALTANTES DISCO #${discoId}]`;
+        if (!notesEl.value.includes(prefijo)) {
+          notesEl.value = notesEl.value ? `${prefijo} ${notesEl.value.trim()}` : prefijo;
+        }
       }
     });
   </script>
