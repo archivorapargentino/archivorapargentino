@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ficha de Disco | Archivo del Rap Argentino</title>
+  <title>Cargando disco... | Archivo del Rap Argentino</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +16,7 @@
       --text-muted: #71717a;
       --border: #e4e4e7;
       --border-subtle: #f4f4f5;
+      --badge-bg: #f4f4f5;
       --btn-bg: #18181b;
       --btn-text: #ffffff;
       --btn-hover: #27272a;
@@ -76,9 +77,9 @@
       padding: 0 20px;
     }
 
-    #statusMessage {
+    .loading-state, .error-state {
       text-align: center;
-      padding: 60px 20px;
+      padding: 80px 20px;
       color: var(--text-muted);
       font-size: 0.95rem;
     }
@@ -97,7 +98,6 @@
       }
     }
 
-    /* Columna Izquierda */
     .album-cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -145,9 +145,8 @@
 
     .meta-item:last-child { margin-bottom: 0; }
     .meta-label { color: var(--text-muted); }
-    .meta-value { font-weight: 600; text-align: right; max-width: 60%; word-break: break-word; }
+    .meta-value { font-weight: 600; text-align: right; }
 
-    /* Columna Derecha */
     .album-header { margin-bottom: 24px; }
 
     .album-header h1 {
@@ -188,7 +187,6 @@
 
     .btn-action-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 30px;
     }
@@ -209,27 +207,6 @@
 
     .btn-external:hover { background-color: var(--btn-hover); }
 
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 6px;
-      background-color: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-      text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 500;
-      transition: all 0.15s ease;
-    }
-
-    .btn-secondary:hover {
-      background-color: var(--border-subtle);
-      border-color: #000000;
-    }
-
-    /* Módulo de Tracklist */
     .tracklist-box {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -306,10 +283,9 @@
   </nav>
 
   <main class="container">
-    <div id="statusMessage">Cargando información del disco...</div>
+    <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
-      <!-- Izquierda -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -319,14 +295,6 @@
           <div class="meta-item">
             <span class="meta-label">Año de salida</span>
             <span class="meta-value" id="metaYear">-</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Ubicación</span>
-            <span class="meta-value" id="metaLocation">-</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Crew / Sello</span>
-            <span class="meta-value" id="metaCrew">-</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Plataforma</span>
@@ -339,7 +307,6 @@
         </div>
       </div>
 
-      <!-- Derecha -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -352,9 +319,6 @@
           <a id="btnExternal" href="#" target="_blank" rel="noopener noreferrer" class="btn-external">
             Escuchar en la plataforma original ↗
           </a>
-          <a id="btnCompletar" href="#" class="btn-secondary">
-            Completar o proponer cambios ✎
-          </a>
         </div>
 
         <div id="tracklistBox" class="tracklist-box" style="display: none;">
@@ -366,7 +330,7 @@
   </main>
 
   <script>
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
     let activeYouTubeId = null;
     let activeYouTubePlaylist = null;
@@ -436,7 +400,6 @@
 
     function setYouTubePlayer(videoId, startSeconds = 0) {
       const box = document.getElementById('playerBox');
-      if (!box) return;
       const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
       const startParam = startSeconds > 0 ? `&start=${startSeconds}` : '';
       box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
@@ -444,7 +407,6 @@
 
     function renderPlayer(link, firstTrackVideoId) {
       const box = document.getElementById('playerBox');
-      if (!box) return;
       box.classList.remove('bandcamp-active');
 
       if (link.includes('spotify.com')) {
@@ -467,6 +429,7 @@
       } else if (link.includes('bandcamp.com')) {
         box.classList.add('bandcamp-active');
         let bcSrc = link;
+
         if (bcSrc.includes('EmbeddedPlayer')) {
           if (!bcSrc.includes('tracklist=true')) {
             bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
@@ -476,7 +439,26 @@
           </div>`;
           return;
         }
-        box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Álbum de Bandcamp disponible en el enlace de abajo.</div>`;
+
+        fetch(`https://bandcamp.com/api/oembed/1/json?url=${encodeURIComponent(link)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.html) {
+              let cleanHtml = data.html
+                .replace(/height="[0-9]+"/g, 'height="680"')
+                .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; max-width: 400px; height: 680px; display: block; margin: 0 auto;"');
+              box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">${cleanHtml}</div>`;
+            } else {
+              box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+                Álbum de Bandcamp listo para escuchar en el botón de abajo.
+              </div>`;
+            }
+          })
+          .catch(() => {
+            box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+              Álbum de Bandcamp listo para escuchar en el botón de abajo.
+            </div>`;
+          });
         return;
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
@@ -488,19 +470,21 @@
         return;
       }
 
-      box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">Este disco no cuenta con reproductor embebido directo. Podés escucharlo en el botón de abajo.</div>`;
+      box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+        Este disco no cuenta con reproductor embebido directo. Puedes escucharlo en el botón de abajo.
+      </div>`;
     }
 
     function renderTracklist(rawTracklist, isYouTube) {
       if (!rawTracklist || typeof rawTracklist !== 'string') return;
+      
       let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
       if (!cleanData) return;
 
       const tracklistBox = document.getElementById('tracklistBox');
       const tracklistItems = document.getElementById('tracklistItems');
-      if (!tracklistBox || !tracklistItems) return;
-
       tracklistItems.innerHTML = '';
+
       let lines = cleanData.includes('\n') ? cleanData.split(/[\r\n]+/) : cleanData.split(/[,;]+/);
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
@@ -558,79 +542,63 @@
     }
 
     async function init() {
-      const msg = document.getElementById('statusMessage');
-      const view = document.getElementById('detailView');
+      const statusEl = document.getElementById('statusMessage');
+      const detailEl = document.getElementById('detailView');
 
-      const params = new URLSearchParams(window.location.search);
-      let id = parseInt(params.get('id'));
+      const urlParams = new URLSearchParams(window.location.search);
+      const albumIndex = parseInt(urlParams.get('id'));
 
-      // Si se abre disco.html sin parámetro, por defecto toma el disco 1
-      if (isNaN(id) || id < 0) {
-        id = 1;
+      if (isNaN(albumIndex) || albumIndex < 0) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'ID de disco no especificado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        return;
       }
 
       try {
-        const res = await fetch(CSV_URL);
-        if (!res.ok) throw new Error("No se pudo conectar con la base de datos.");
-        const text = await res.text();
-        const rows = parseCSV(text);
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
 
-        if (id >= rows.length) {
-          msg.innerHTML = `No se encontró el registro #${id}. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
+        if (albumIndex >= rows.length) {
+          statusEl.className = 'error-state';
+          statusEl.innerHTML = 'El disco no fue encontrado en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
           return;
         }
 
-        const cols = rows[id] || [];
-        let rawTitle = cols[0] || 'Sin título';
-        let year = cols[1] || '';
-        let link = cols[2] || '';
-        let cover = cols[3] || '';
-        let tracklistData = cols[4] || '';
-        let ubicacion = cols[5] || 'No especificada'; // Columna F
-        let crew = cols[6] || 'Independiente / Sin sello'; // Columna G
+        const cols = rows[albumIndex];
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+        let tracklistData = (cols[4] || '').trim();
 
-        let artista = rawTitle;
-        let disco = rawTitle;
-        if (rawTitle.includes(' - ')) {
-          let partes = rawTitle.split(' - ');
-          artista = partes[0].trim();
-          disco = partes.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        // 1. Mostrar datos de texto
-        document.title = `${disco} - ${artista} | Archivo del Rap Argentino`;
-        document.getElementById('albumTitle').textContent = disco;
-        document.getElementById('artistName').textContent = artista;
+        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = album;
+        document.getElementById('artistName').textContent = artist;
         document.getElementById('metaYear').textContent = year || 'Sin fecha';
-        document.getElementById('metaLocation').textContent = ubicacion;
-        document.getElementById('metaCrew').textContent = crew;
         document.getElementById('metaPlatform').textContent = getPlatform(link);
-        document.getElementById('metaId').textContent = `#${id}`;
+        document.getElementById('metaId').textContent = `#${albumIndex + 1}`;
 
+        const btnExt = document.getElementById('btnExternal');
         if (link) {
-          document.getElementById('btnExternal').href = link;
+          btnExt.href = link;
         } else {
-          document.getElementById('btnExternal').style.display = 'none';
+          btnExt.style.display = 'none';
         }
 
-        // 2. Conexión dinámica con colaborar.html
-        const editParams = new URLSearchParams({
-          id: id,
-          artista: artista,
-          titulo: disco,
-          anio: year,
-          enlace: link,
-          ciudad: ubicacion !== 'No especificada' ? ubicacion : '',
-          crew: crew !== 'Independiente / Sin sello' ? crew : ''
-        });
-        document.getElementById('btnCompletar').href = `colaborar.html?${editParams.toString()}`;
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
 
-        // 3. Destrabar la vista inmediatamente
-        msg.style.display = 'none';
-        view.style.display = 'grid';
-
-        // 4. Carátula
-        const coverBox = document.getElementById('coverBox');
         let firstTrackId = '';
         if (tracklistData && tracklistData.includes('|')) {
           const firstLine = tracklistData.split(/[\r\n]+/)[0];
@@ -639,30 +607,32 @@
           }
         }
 
+        const coverBox = document.getElementById('coverBox');
         const ytId = extractYouTubeId(link) || firstTrackId;
-
-        if (cover) {
-          coverBox.innerHTML = `<img src="${cover}" alt="${disco}">`;
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
         } else if (ytId) {
-          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${disco}">`;
+          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
         } else if (link.includes('spotify.com')) {
           fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
             .then(r => r.json())
-            .then(d => { if (d && d.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${disco}">`; })
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
             .catch(() => {});
         } else if (link.includes('soundcloud.com')) {
           fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
             .then(r => r.json())
-            .then(d => { if (d && d.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${disco}">`; })
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${album}">`; })
             .catch(() => {});
+        } else {
+          coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
         }
 
-        // 5. Reproductor y lista de temas
         renderPlayer(link, firstTrackId);
         renderTracklist(tracklistData, link.includes('youtube.com') || link.includes('youtu.be'));
 
       } catch (err) {
-        msg.innerHTML = `<strong>Error de carga:</strong> ${err.message}<br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'Error al conectar con la base de datos. Intenta recargar la página.';
       }
     }
 
