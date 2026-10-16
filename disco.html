@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ficha de Disco | Archivo del Rap Argentino</title>
+  <title>Cargando disco... | Archivo del Rap Argentino</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,7 +77,7 @@
       padding: 0 20px;
     }
 
-    #statusMessage {
+    .loading-state, .error-state {
       text-align: center;
       padding: 80px 20px;
       color: var(--text-muted);
@@ -98,7 +98,6 @@
       }
     }
 
-    /* Columna Izquierda */
     .album-cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -146,9 +145,8 @@
 
     .meta-item:last-child { margin-bottom: 0; }
     .meta-label { color: var(--text-muted); }
-    .meta-value { font-weight: 600; text-align: right; max-width: 65%; word-break: break-word; }
+    .meta-value { font-weight: 600; text-align: right; }
 
-    /* Columna Derecha */
     .album-header { margin-bottom: 24px; }
 
     .album-header h1 {
@@ -189,7 +187,6 @@
 
     .btn-action-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
       margin-bottom: 30px;
     }
@@ -210,27 +207,6 @@
 
     .btn-external:hover { background-color: var(--btn-hover); }
 
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 6px;
-      background-color: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-      text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 500;
-      transition: all 0.15s ease;
-    }
-
-    .btn-secondary:hover {
-      background-color: var(--border-subtle);
-      border-color: #000000;
-    }
-
-    /* Módulo de Tracklist */
     .tracklist-box {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -307,10 +283,9 @@
   </nav>
 
   <main class="container">
-    <div id="statusMessage">Cargando información del disco...</div>
+    <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
-      <!-- Izquierda -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -320,14 +295,6 @@
           <div class="meta-item">
             <span class="meta-label">Año de salida</span>
             <span class="meta-value" id="metaYear">-</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Ubicación</span>
-            <span class="meta-value" id="metaLocation">-</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Crew / Sello</span>
-            <span class="meta-value" id="metaCrew">-</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Plataforma</span>
@@ -340,7 +307,6 @@
         </div>
       </div>
 
-      <!-- Derecha -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -352,9 +318,6 @@
         <div class="btn-action-row">
           <a id="btnExternal" href="#" target="_blank" rel="noopener noreferrer" class="btn-external">
             Escuchar en la plataforma original ↗
-          </a>
-          <a id="btnCompletar" href="#" class="btn-secondary">
-            Completar o proponer cambios ✎
           </a>
         </div>
 
@@ -370,6 +333,7 @@
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
     let activeYouTubeId = null;
+    let activeYouTubePlaylist = null;
 
     function parseCSV(text) {
       const rows = [];
@@ -436,6 +400,243 @@
 
     function setYouTubePlayer(videoId, startSeconds = 0) {
       const box = document.getElementById('playerBox');
-      if (!box) return;
       const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
-      const startParam = startSeconds > 0 ? `&
+      const startParam = startSeconds > 0 ? `&start=${startSeconds}` : '';
+      box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+    }
+
+    function renderPlayer(link, firstTrackVideoId) {
+      const box = document.getElementById('playerBox');
+      box.classList.remove('bandcamp-active');
+
+      if (link.includes('spotify.com')) {
+        let cleanUrl = link.split('?')[0].replace(/\/intl-[a-z]{2}\//i, '/');
+        const match = cleanUrl.match(/spotify\.com\/(album|track|playlist|artist)\/([a-zA-Z0-9]+)/);
+        if (match) {
+          box.innerHTML = `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" height="420" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+          return;
+        }
+      } else if (link.includes('youtube.com') || link.includes('youtu.be')) {
+        activeYouTubeId = extractYouTubeId(link) || firstTrackVideoId;
+        activeYouTubePlaylist = extractYouTubePlaylistId(link);
+
+        if (activeYouTubeId) {
+          box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${activeYouTubeId}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        } else if (activeYouTubePlaylist) {
+          box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${activeYouTubePlaylist}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+        }
+        return;
+      } else if (link.includes('bandcamp.com')) {
+        box.classList.add('bandcamp-active');
+        let bcSrc = link;
+
+        if (bcSrc.includes('EmbeddedPlayer')) {
+          if (!bcSrc.includes('tracklist=true')) {
+            bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
+          }
+          box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">
+            <iframe style="border: 0; width: 100%; max-width: 400px; height: 680px;" src="${bcSrc}" seamless loading="lazy"></iframe>
+          </div>`;
+          return;
+        }
+
+        fetch(`https://bandcamp.com/api/oembed/1/json?url=${encodeURIComponent(link)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.html) {
+              let cleanHtml = data.html
+                .replace(/height="[0-9]+"/g, 'height="680"')
+                .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; max-width: 400px; height: 680px; display: block; margin: 0 auto;"');
+              box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">${cleanHtml}</div>`;
+            } else {
+              box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+                Álbum de Bandcamp listo para escuchar en el botón de abajo.
+              </div>`;
+            }
+          })
+          .catch(() => {
+            box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+              Álbum de Bandcamp listo para escuchar en el botón de abajo.
+            </div>`;
+          });
+        return;
+      } else if (link.includes('soundcloud.com')) {
+        const cleanLink = link.split('?')[0];
+        const isSet = cleanLink.includes('/sets/');
+        const playerHeight = isSet ? 450 : 166;
+        box.innerHTML = `<iframe width="100%" height="${playerHeight}" scrolling="no" frameborder="no" allow="autoplay" 
+          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(cleanLink)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true${isSet ? '&show_artwork=true' : ''}">
+        </iframe>`;
+        return;
+      }
+
+      box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
+        Este disco no cuenta con reproductor embebido directo. Puedes escucharlo en el botón de abajo.
+      </div>`;
+    }
+
+    function renderTracklist(rawTracklist, isYouTube) {
+      if (!rawTracklist || typeof rawTracklist !== 'string') return;
+      
+      let cleanData = rawTracklist.trim().replace(/^["']|["']$/g, '').trim();
+      if (!cleanData) return;
+
+      const tracklistBox = document.getElementById('tracklistBox');
+      const tracklistItems = document.getElementById('tracklistItems');
+      tracklistItems.innerHTML = '';
+
+      let lines = cleanData.includes('\n') ? cleanData.split(/[\r\n]+/) : cleanData.split(/[,;]+/);
+      lines = lines.map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      lines.forEach((line, index) => {
+        let titleStr = line;
+        let trackVideoId = '';
+        let timeStr = '';
+
+        if (titleStr.includes('|')) {
+          const parts = titleStr.split('|');
+          titleStr = parts[0].trim();
+          trackVideoId = parts[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        }
+
+        const fullTimeMatch = titleStr.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
+        if (fullTimeMatch) {
+          timeStr = fullTimeMatch[1];
+          titleStr = titleStr.replace(fullTimeMatch[0], '');
+        }
+
+        titleStr = titleStr
+          .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
+          .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
+          .replace(/\(\s*\)/g, '')
+          .trim();
+
+        const row = document.createElement('div');
+        const isInteractive = isYouTube && (trackVideoId || timeStr);
+        row.className = `track-row ${isInteractive ? 'interactive' : ''}`;
+
+        row.innerHTML = `
+          <div class="track-title-col">
+            <span class="track-num">${index + 1}.</span>
+            <span class="track-name">${titleStr}</span>
+          </div>
+          ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
+        `;
+
+        if (isYouTube) {
+          row.title = `Reproducir tema ${index + 1}`;
+          row.addEventListener('click', () => {
+            if (trackVideoId) {
+              setYouTubePlayer(trackVideoId, 0);
+            } else if (timeStr && activeYouTubeId) {
+              setYouTubePlayer(activeYouTubeId, parseTimeToSeconds(timeStr));
+            }
+          });
+        }
+
+        tracklistItems.appendChild(row);
+      });
+
+      tracklistBox.style.display = 'block';
+    }
+
+    async function init() {
+      const statusEl = document.getElementById('statusMessage');
+      const detailEl = document.getElementById('detailView');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const albumIndex = parseInt(urlParams.get('id'));
+
+      if (isNaN(albumIndex) || albumIndex < 0) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'ID de disco no especificado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        return;
+      }
+
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (albumIndex >= rows.length) {
+          statusEl.className = 'error-state';
+          statusEl.innerHTML = 'El disco no fue encontrado en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+          return;
+        }
+
+        const cols = rows[albumIndex];
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+        let tracklistData = (cols[4] || '').trim();
+
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        }
+
+        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = album;
+        document.getElementById('artistName').textContent = artist;
+        document.getElementById('metaYear').textContent = year || 'Sin fecha';
+        document.getElementById('metaPlatform').textContent = getPlatform(link);
+        document.getElementById('metaId').textContent = `#${albumIndex + 1}`;
+
+        const btnExt = document.getElementById('btnExternal');
+        if (link) {
+          btnExt.href = link;
+        } else {
+          btnExt.style.display = 'none';
+        }
+
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
+
+        let firstTrackId = '';
+        if (tracklistData && tracklistData.includes('|')) {
+          const firstLine = tracklistData.split(/[\r\n]+/)[0];
+          if (firstLine.includes('|')) {
+            firstTrackId = firstLine.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+          }
+        }
+
+        const coverBox = document.getElementById('coverBox');
+        const ytId = extractYouTubeId(link) || firstTrackId;
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+        } else if (ytId) {
+          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+        } else if (link.includes('spotify.com')) {
+          fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
+            .then(r => r.json())
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
+            .catch(() => {});
+        } else if (link.includes('soundcloud.com')) {
+          fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
+            .then(r => r.json())
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${album}">`; })
+            .catch(() => {});
+        } else {
+          coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
+        }
+
+        renderPlayer(link, firstTrackId);
+        renderTracklist(tracklistData, link.includes('youtube.com') || link.includes('youtu.be'));
+
+      } catch (err) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'Error al conectar con la base de datos. Intenta recargar la página.';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
