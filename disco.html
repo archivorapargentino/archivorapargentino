@@ -97,7 +97,6 @@
       }
     }
 
-    /* Columna Izquierda */
     .album-cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -147,7 +146,6 @@
     .meta-label { color: var(--text-muted); }
     .meta-value { font-weight: 600; text-align: right; max-width: 65%; word-break: break-word; }
     
-    /* Enlaces interactivos en las categorías de la ficha técnica */
     .meta-value a {
       color: var(--text);
       text-decoration: none;
@@ -159,7 +157,6 @@
       border-color: #2563eb;
     }
 
-    /* Columna Derecha */
     .album-header { margin-bottom: 24px; }
 
     .album-header h1 {
@@ -241,7 +238,6 @@
       border-color: #000000;
     }
 
-    /* Módulo de Tracklist */
     .tracklist-box {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -275,35 +271,11 @@
       user-select: none;
     }
 
-    .track-row.interactive {
-      cursor: pointer;
-    }
-
-    .track-row.interactive:hover {
-      background-color: var(--border-subtle);
-      color: #000000;
-    }
-
-    .track-title-col {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .track-num {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      width: 24px;
-    }
-
-    .track-time {
-      font-family: monospace;
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      background-color: var(--border-subtle);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
+    .track-row.interactive { cursor: pointer; }
+    .track-row.interactive:hover { background-color: var(--border-subtle); color: #000000; }
+    .track-title-col { display: flex; align-items: center; gap: 10px; }
+    .track-num { color: var(--text-muted); font-size: 0.8rem; width: 24px; }
+    .track-time { font-family: monospace; font-size: 0.82rem; color: var(--text-muted); background-color: var(--border-subtle); padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -321,7 +293,6 @@
     <div id="statusMessage">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
-      <!-- Izquierda -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -359,7 +330,6 @@
         </div>
       </div>
 
-      <!-- Derecha -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -585,7 +555,8 @@
       let id = parseInt(rawId);
 
       if (isNaN(id) || id < 0) {
-        id = 1;
+        msg.innerHTML = "ID de disco no especificado o inválido. <br><br><a href='index.html' class='back-link'>Volver al catálogo</a>";
+        return;
       }
 
       try {
@@ -594,28 +565,12 @@
         const text = await res.text();
         const allRows = parseCSV(text);
 
-        if (allRows.length === 0) {
-          msg.innerHTML = "Planilla vacía.";
-          return;
-        }
-
-        let startIndex = 0;
-        const firstCell = (allRows[0][0] || '').toLowerCase();
-        if (firstCell.includes('catálogo') || firstCell.includes('catalogo') || firstCell.includes('artista')) {
-          startIndex = 1;
-        }
-
-        let targetRowIndex = startIndex + id;
-        if (!allRows[targetRowIndex]) {
-          targetRowIndex = id;
-        }
-
-        if (!allRows[targetRowIndex]) {
+        if (!allRows[id]) {
           msg.innerHTML = `No se encontró el registro #${id}. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
           return;
         }
 
-        const cols = allRows[targetRowIndex] || [];
+        const cols = allRows[id] || [];
         let rawTitle = (cols[0] || 'Sin título').replace(/^Hoja \d+\s*/i, '').trim();
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
@@ -632,12 +587,11 @@
           disco = partes.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        // Títulos de la página
         document.title = `${disco} - ${artista} | Archivo del Rap Argentino`;
         document.getElementById('albumTitle').textContent = disco;
         document.getElementById('artistName').textContent = artista;
 
-        // Ficha técnica con categorías separadas como enlaces interactivos hacia index.html
+        // Categorías de la Ficha Técnica con enlaces clickeables para búsquedas
         document.getElementById('metaArtist').innerHTML = artista !== '-' ? `<a href="index.html?search=${encodeURIComponent(artista)}">${artista}</a>` : '-';
         document.getElementById('metaAlbum').innerHTML = disco !== '-' ? `<a href="index.html?search=${encodeURIComponent(disco)}">${disco}</a>` : '-';
         document.getElementById('metaYear').innerHTML = year ? `<a href="index.html?search=${encodeURIComponent(year)}">${year}</a>` : '-';
@@ -654,7 +608,6 @@
           btnExt.style.display = 'none';
         }
 
-        // Enlace de corrección a colaborar.html
         const editParams = new URLSearchParams({
           id: id,
           artista: artista,
@@ -669,7 +622,6 @@
         msg.style.display = 'none';
         view.style.display = 'grid';
 
-        // Carátula
         const coverBox = document.getElementById('coverBox');
         let firstTrackId = '';
         if (tracklistData && tracklistData.includes('|')) {
