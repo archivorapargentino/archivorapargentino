@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Archivo del Rap Argentino | Catálogo</title>
+  <title>Archivo del Rap Argentino</title>
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Archivo del Rap Argentino">
+  <meta property="og:description" content="Catálogo discográfico histórico y contemporáneo del hip hop argentino (1989-presente).">
+  <meta property="og:locale" content="es_AR">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,8 +21,10 @@
       --text-muted: #71717a;
       --border: #e4e4e7;
       --border-subtle: #f4f4f5;
+      --badge-bg: #f4f4f5;
       --btn-bg: #18181b;
       --btn-text: #ffffff;
+      --btn-hover: #27272a;
       --radius: 8px;
     }
 
@@ -28,250 +35,382 @@
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.5;
-      padding-bottom: 80px;
+      padding-bottom: 60px;
       -webkit-font-smoothing: antialiased;
     }
 
-    header {
-      max-width: 1200px;
+    .top-nav {
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 32px 20px 20px;
+      padding: 20px 20px 0;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-
-    header h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .nav-links {
-      display: flex;
+      justify-content: flex-end;
       gap: 16px;
     }
 
     .nav-link {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 500;
       color: var(--text-muted);
       text-decoration: none;
       transition: color 0.15s ease;
     }
 
-    .nav-link:hover, .nav-link.active {
-      color: var(--text);
-    }
+    .nav-link:hover, .nav-link.active { color: var(--text); }
 
-    .container {
-      max-width: 1200px;
+    header {
+      padding: 30px 20px 24px;
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 32px 20px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .controls-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 32px;
-      justify-content: space-between;
-      align-items: center;
+    .header-inner h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
     }
 
-    .search-box {
-      flex: 1;
-      min-width: 280px;
-      position: relative;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 10px 14px 10px 38px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+    .header-inner p {
+      color: var(--text-muted);
+      margin-top: 4px;
       font-size: 0.9rem;
-      outline: none;
-      background-color: var(--surface);
-      color: var(--text);
-      transition: border-color 0.15s ease;
     }
 
-    .search-box input:focus {
-      border-color: var(--text);
-    }
-
-    .search-box svg {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      width: 16px;
-      height: 16px;
-    }
-
-    .sort-box {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sort-box label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
-
-    .sort-box select {
-      padding: 9px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background-color: var(--surface);
-      color: var(--text);
-      font-size: 0.88rem;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .catalog-grid {
+    .header-mosaic {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 24px;
-    }
-
-    .album-card {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background-color: var(--surface);
+      grid-template-columns: repeat(var(--mosaic-cols, 14), 1fr);
+      gap: 8px;
+      margin-top: 24px;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.15s ease;
+      border-radius: var(--radius);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0));
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0));
     }
 
-    .album-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--text-muted);
-    }
-
-    .card-cover {
+    .mosaic-thumb {
       width: 100%;
       aspect-ratio: 1 / 1;
       background-color: var(--border-subtle);
-      position: relative;
-      overflow: hidden;
+      border-radius: 6px;
+      object-fit: cover;
+      opacity: 0.88;
+      border: 1px solid var(--border);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
     }
 
-    .card-cover img {
+    .mosaic-thumb:hover {
+      opacity: 1;
+      transform: scale(1.08);
+      z-index: 2;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-box { flex-grow: 1; }
+
+    .search-box input, .sort-select {
+      padding: 11px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .search-box input { width: 100%; }
+    .search-box input:focus, .sort-select:focus { border-color: var(--text); }
+
+    .sort-select {
+      cursor: pointer;
+      font-weight: 500;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 14px;
+      padding-right: 32px;
+      appearance: none;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      background-color: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover { color: var(--text); border-color: #a1a1aa; }
+    .filter-btn.active {
+      background-color: var(--text);
+      color: #ffffff;
+      border-color: var(--text);
+    }
+
+    .stats {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 24px 18px;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background-color: var(--surface);
+      transition: border-color 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      border-color: #a1a1aa;
+      transform: translateY(-2px);
+    }
+
+    .cover-container {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background-color: var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cover-container img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      opacity: 0;
+      transition: opacity 0.25s ease-in;
+    }
+
+    .cover-container img.loaded { opacity: 1; }
+
+    .cover-placeholder {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 12px;
+      text-align: center;
     }
 
     .card-body {
       padding: 14px;
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex-grow: 1;
       justify-content: space-between;
     }
 
-    .card-title {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .card-artist {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .card-footer {
+    .meta-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 8px;
+      align-items: baseline;
+      margin-bottom: 6px;
     }
 
-    .card-year {
-      background-color: var(--border-subtle);
+    .year-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background-color: var(--badge-bg);
       padding: 2px 6px;
       border-radius: 4px;
-      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .year-badge:hover {
+      background-color: var(--text);
+      color: #ffffff;
+    }
+
+    .album-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+
+    .artist-links {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .filter-tag {
+      cursor: pointer;
+      display: inline;
+      transition: color 0.15s ease;
+    }
+
+    .filter-tag:hover {
+      color: var(--text);
+      text-decoration: underline;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
       text-decoration: none;
-      transition: background-color 0.15s ease;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
     }
 
-    .card-year:hover {
-      background-color: var(--border);
+    .btn-active {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
     }
 
-    .loading-state, .empty-state {
+    .btn-active:hover { background-color: var(--btn-hover); }
+
+    .empty-state {
       text-align: center;
       padding: 60px 20px;
       color: var(--text-muted);
       grid-column: 1 / -1;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
 
+  <nav class="top-nav">
+    <a href="index.html" class="nav-link active">Catálogo</a>
+    <a href="acerca.html" class="nav-link">Acerca del Archivo</a>
+    <a href="colaborar.html" class="nav-link">Colaborar</a>
+  </nav>
+
   <header>
-    <h1>Archivo del Rap Argentino</h1>
-    <div class="nav-links">
-      <a href="index.html" class="nav-link active">Catálogo</a>
-      <a href="acerca.html" class="nav-link">Acerca del Archivo</a>
-      <a href="colaborar.html" class="nav-link">Colaborar</a>
+    <div class="header-inner">
+      <h1>Archivo del Rap Argentino</h1>
+      <p>Catálogo discográfico histórico y contemporáneo</p>
     </div>
+    <div id="headerMosaic" class="header-mosaic" aria-hidden="true"></div>
   </header>
 
-  <main class="container">
-    <div class="controls-bar">
-      <div class="search-box">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input type="text" id="searchInput" placeholder="Buscar artista, disco, año o ubicación...">
-      </div>
-
-      <div class="sort-box">
-        <label for="sortSelect">Ordenar por:</label>
-        <select id="sortSelect">
-          <option value="newest" selected>Más recientes</option>
-          <option value="oldest">Más antiguos</option>
-          <option value="alpha">Alfabético</option>
+  <div class="container">
+    <div class="controls">
+      <div class="top-controls">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Buscar artista, disco, año, ubicación...">
+        </div>
+        <select id="sortSelect" class="sort-select" aria-label="Ordenar discos">
+          <option value="desc" selected>Últimos agregados (Más recientes)</option>
+          <option value="alpha">Artista (A → Z)</option>
+          <option value="asc">Más antiguos (1989 → Hoy)</option>
         </select>
       </div>
+
+      <div class="filters" id="filters">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="90s">Años 90</button>
+        <button class="filter-btn" data-filter="00s">Años 2000</button>
+        <button class="filter-btn" data-filter="10s">Años 2010</button>
+        <button class="filter-btn" data-filter="20s">Años 2020</button>
+        <button class="filter-btn" data-filter="sin-fecha">Sin fecha</button>
+      </div>
     </div>
 
-    <div id="catalogGrid" class="catalog-grid">
-      <div class="loading-state">Cargando catálogo...</div>
-    </div>
-  </main>
+    <div class="stats" id="statsDisplay">Cargando catálogo...</div>
+    <main class="grid" id="albumGrid"></main>
+  </div>
 
   <script>
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZNghTmjK_REV-NhXcsRMUu9m7s5JdESisakhIFD1Lm9P3xIoin-iea89nR6xKpQ/pub?output=csv';
 
-    let globalAlbums = [];
+    let rawData = [];
+    const grid = document.getElementById('albumGrid');
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const statsDisplay = document.getElementById('statsDisplay');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const headerMosaic = document.getElementById('headerMosaic');
+
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let currentSort = 'desc'; // Por defecto por orden de carga / recientes
+
+    const PRESERVED_GROUPS = [
+      'Illya Kuryaki & The Valderramas',
+      'Illya Kuriaky & Th Valderramas',
+      'Illya Kuryaki and the Valderramas'
+    ];
+
+    const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
+
+    function saveCoverCache(key, url) {
+      coverCache[key] = url;
+      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
+    }
+
+    function updateURLParams() {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('q', searchQuery);
+      if (currentFilter && currentFilter !== 'all') params.set('filtro', currentFilter);
+      if (currentSort && currentSort !== 'desc') params.set('orden', currentSort);
+
+      const qs = params.toString();
+      const newPath = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState(null, '', newPath);
+    }
 
     function parseCSV(text) {
       const rows = [];
@@ -283,13 +422,11 @@
         const char = text[i];
         const nextChar = text[i + 1];
 
-        if (char === '"') {
-          if (insideQuotes && nextChar === '"') {
-            currentVal += '"';
-            i++;
-          } else {
-            insideQuotes = !insideQuotes;
-          }
+        if (char === '"' && insideQuotes && nextChar === '"') {
+          currentVal += '"';
+          i++;
+        } else if (char === '"') {
+          insideQuotes = !insideQuotes;
         } else if (char === ',' && !insideQuotes) {
           currentRow.push(currentVal.trim());
           currentVal = '';
@@ -310,144 +447,433 @@
       return rows;
     }
 
+    function processSheetRows(rows) {
+      return rows.map((cols, index) => {
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+        let location = (cols[5] || '').trim();
+        let crew = (cols[6] || '').trim();
+
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        }
+
+        return [artist, album, year, link, manualCover, index, location, crew];
+      });
+    }
+
+    function formatArtistLinks(artistString) {
+      const cleanName = artistString.trim();
+      const isPreserved = PRESERVED_GROUPS.some(group => group.toLowerCase() === cleanName.toLowerCase());
+
+      if (isPreserved) {
+        return `<span class="filter-tag" data-search="${cleanName}">${cleanName}</span>`;
+      }
+
+      const separators = /(?:,\s*|\s+&\s+|\s+y\s+|\s+x\s+)/i;
+      const rawParts = cleanName.split(separators);
+
+      return rawParts
+        .map(name => name.trim())
+        .filter(name => name.length > 0)
+        .map(name => `<span class="filter-tag" data-search="${name}">${name}</span>`)
+        .join(', ');
+    }
+
+    function getPlatform(url) {
+      if (!url) return 'none';
+      if (url.includes('spotify.com')) return 'spotify';
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+      if (url.includes('bandcamp.com')) return 'bandcamp';
+      if (url.includes('soundcloud.com')) return 'soundcloud';
+      return 'other';
+    }
+
     function extractYouTubeId(url) {
-      if (!url) return null;
       const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/);
       return match ? match[1] : null;
     }
 
-    async function loadCatalog() {
-      const grid = document.getElementById('catalogGrid');
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchQueryParam = urlParams.get('search');
-      if (searchQueryParam) {
-        document.getElementById('searchInput').value = searchQueryParam;
-      }
-
+    async function fetchSpotifyCover(spotifyUrl) {
+      if (coverCache[spotifyUrl]) return coverCache[spotifyUrl];
       try {
-        const response = await fetch(SHEET_CSV_URL);
-        if (!response.ok) throw new Error('No se pudo conectar con la base de datos.');
-        const csvText = await response.text();
-        const rows = parseCSV(csvText);
-
-        if (rows.length === 0) {
-          grid.innerHTML = '<div class="empty-state">La planilla está vacía.</div>';
-          return;
+        const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data && data.thumbnail_url) {
+          saveCoverCache(spotifyUrl, data.thumbnail_url);
+          return data.thumbnail_url;
         }
-
-        let startIndex = 0;
-        const firstCell = (rows[0][0] || '').toLowerCase();
-        if (firstCell.includes('catálogo') || firstCell.includes('catalogo') || firstCell.includes('artista')) {
-          startIndex = 1;
-        }
-
-        globalAlbums = [];
-        for (let i = startIndex; i < rows.length; i++) {
-          const cols = rows[i];
-          if (!cols || cols.length === 0) continue;
-
-          let rawTitle = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
-          let year = (cols[1] || '').trim();
-          let link = (cols[2] || '').trim();
-          let manualCover = (cols[3] || '').trim();
-          let tracklistData = (cols[4] || '').trim();
-          let location = (cols[5] || '').trim();
-          let crew = (cols[6] || '').trim();
-
-          let artist = rawTitle;
-          let album = rawTitle;
-
-          if (rawTitle.includes(' - ')) {
-            const parts = rawTitle.split(' - ');
-            artist = parts[0].trim();
-            album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
-          }
-
-          let firstTrackId = '';
-          if (tracklistData && tracklistData.includes('|')) {
-            const firstLine = tracklistData.split(/[\r\n]+/)[0];
-            if (firstLine.includes('|')) {
-              firstTrackId = firstLine.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
-            }
-          }
-
-          let coverUrl = manualCover;
-          if (!coverUrl) {
-            const ytId = extractYouTubeId(link) || firstTrackId;
-            if (ytId) {
-              coverUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-            }
-          }
-
-          globalAlbums.push({
-            originalIndex: i,
-            artist: artist,
-            album: album,
-            year: year || 'S/D',
-            link: link,
-            cover: coverUrl,
-            location: location,
-            crew: crew
-          });
-        }
-
-        renderCatalog();
-
-      } catch (err) {
-        grid.innerHTML = `<div class="empty-state">Error al cargar el catálogo: ${err.message}</div>`;
-      }
+      } catch (e) {}
+      return null;
     }
 
-    function renderCatalog() {
-      const grid = document.getElementById('catalogGrid');
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-      const sortType = document.getElementById('sortSelect').value;
+    async function fetchBandcampCover(bandcampUrl) {
+      if (coverCache[bandcampUrl]) return coverCache[bandcampUrl];
+      try {
+        const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(bandcampUrl)}`);
+        if (res.ok) {
+          const json = await res.json();
+          const imgUrl = json?.data?.image?.url || null;
+          if (imgUrl) {
+            saveCoverCache(bandcampUrl, imgUrl);
+            return imgUrl;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
 
-      let filtered = globalAlbums.filter(item => {
-        return item.artist.toLowerCase().includes(searchTerm) ||
-               item.album.toLowerCase().includes(searchTerm) ||
-               item.year.toLowerCase().includes(searchTerm) ||
-               item.location.toLowerCase().includes(searchTerm) ||
-               item.crew.toLowerCase().includes(searchTerm);
-      });
+    async function fetchSoundCloudCover(scUrl) {
+      const cleanUrl = scUrl.split('?')[0];
+      if (coverCache[cleanUrl]) return coverCache[cleanUrl];
 
-      if (sortType === 'newest') {
-        filtered.sort((a, b) => b.originalIndex - a.originalIndex);
-      } else if (sortType === 'oldest') {
-        filtered.sort((a, b) => a.originalIndex - b.originalIndex);
-      } else if (sortType === 'alpha') {
-        filtered.sort((a, b) => a.artist.localeCompare(b.artist));
+      let imgUrl = null;
+      try {
+        const res = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          imgUrl = data.thumbnail_url || null;
+        }
+      } catch (e) {}
+
+      if (!imgUrl) {
+        try {
+          const resMl = await fetch(`https://api.microlink.io?url=${encodeURIComponent(cleanUrl)}`);
+          if (resMl.ok) {
+            const jsonMl = await resMl.json();
+            imgUrl = jsonMl?.data?.image?.url || null;
+          }
+        } catch (e) {}
       }
 
-      if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state">No se encontraron discos que coincidan con la búsqueda.</div>';
+      if (imgUrl && imgUrl.includes('-large.jpg')) {
+        imgUrl = imgUrl.replace('-large.jpg', '-t500x500.jpg');
+      }
+
+      if (imgUrl) saveCoverCache(cleanUrl, imgUrl);
+      return imgUrl;
+    }
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function updateHeaderMosaic() {
+      if (!headerMosaic) return;
+
+      const availableSpotify = rawData
+        .filter(([artist, album, year, link, manualCover, id]) => getPlatform(link) === 'spotify' && coverCache[link])
+        .map(([artist, album, year, link, manualCover, id]) => ({
+          artist, album, id, cover: coverCache[link]
+        }));
+
+      const uniqueCoversMap = new Map();
+      availableSpotify.forEach(item => {
+        if (!uniqueCoversMap.has(item.cover)) uniqueCoversMap.set(item.cover, item);
+      });
+
+      const uniqueList = Array.from(uniqueCoversMap.values());
+      if (uniqueList.length < 8) {
+        headerMosaic.style.display = 'none';
         return;
       }
 
-      grid.innerHTML = filtered.map(item => `
-        <div class="album-card" onclick="window.location.href='disco.html?id=${item.originalIndex}'">
-          <div class="card-cover">
-            ${item.cover ? `<img src="${item.cover}" alt="${item.album}" loading="lazy">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.8rem;">Sin carátula</div>`}
+      const containerWidth = headerMosaic.clientWidth || 1200;
+      let cols = Math.floor(containerWidth / 78);
+      if (cols < 6) cols = 6;
+      if (cols > 15) cols = 15;
+
+      const totalNeeded = cols * 2;
+      headerMosaic.style.setProperty('--mosaic-cols', cols);
+
+      const randomSelection = shuffleArray(uniqueList).slice(0, totalNeeded);
+      const finalCount = Math.floor(randomSelection.length / cols) * cols;
+      const finalItems = randomSelection.slice(0, finalCount);
+
+      if (finalItems.length === 0) {
+        headerMosaic.style.display = 'none';
+        return;
+      }
+
+      headerMosaic.style.display = 'grid';
+      headerMosaic.innerHTML = '';
+
+      finalItems.forEach(item => {
+        const img = document.createElement('img');
+        img.src = item.cover;
+        img.className = 'mosaic-thumb';
+        img.alt = `${item.album} - ${item.artist}`;
+        img.title = `${item.artist} - ${item.album} (Clic para ver ficha)`;
+        img.loading = 'lazy';
+        img.addEventListener('click', () => {
+          window.location.href = `disco.html?id=${item.id}`;
+        });
+        headerMosaic.appendChild(img);
+      });
+    }
+
+    let observer;
+    const requestQueue = [];
+    let isProcessing = false;
+
+    function initObserver() {
+      if (observer) observer.disconnect();
+
+      observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const container = entry.target;
+            const platform = container.dataset.platform;
+            const link = container.dataset.link;
+            const album = container.dataset.album;
+            const manualCover = container.dataset.manualCover;
+
+            obs.unobserve(container);
+
+            if (manualCover && manualCover !== '') {
+              container.innerHTML = `<img src="${manualCover}" alt="${album}" class="loaded">`;
+              return;
+            }
+
+            if (platform === 'youtube') {
+              const ytId = extractYouTubeId(link);
+              if (ytId) {
+                const ytImg = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                const fallbackImg = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
+                container.innerHTML = `<img src="${ytImg}" alt="${album}" class="loaded" onerror="this.onerror=null; this.src='${fallbackImg}';">`;
+              }
+            } else if (platform === 'spotify' || platform === 'bandcamp' || platform === 'soundcloud') {
+              const cleanLink = link.split('?')[0];
+              if (coverCache[cleanLink] || coverCache[link]) {
+                container.innerHTML = `<img src="${coverCache[cleanLink] || coverCache[link]}" alt="${album}" class="loaded">`;
+              } else {
+                requestQueue.push({ container, platform, link, album });
+                processQueue();
+              }
+            }
+          }
+        });
+      }, { rootMargin: '200px 0px' });
+    }
+
+    async function processQueue() {
+      if (isProcessing || requestQueue.length === 0) return;
+      isProcessing = true;
+
+      const { container, platform, link, album } = requestQueue.shift();
+      let imgUrl = null;
+
+      if (platform === 'spotify') {
+        imgUrl = await fetchSpotifyCover(link);
+        if (imgUrl && headerMosaic && headerMosaic.children.length < 12) updateHeaderMosaic();
+      } else if (platform === 'bandcamp') {
+        imgUrl = await fetchBandcampCover(link);
+      } else if (platform === 'soundcloud') {
+        imgUrl = await fetchSoundCloudCover(link);
+      }
+
+      if (imgUrl && container) {
+        container.innerHTML = `<img src="${imgUrl}" alt="${album}" class="loaded">`;
+      }
+
+      setTimeout(() => {
+        isProcessing = false;
+        processQueue();
+      }, 200);
+    }
+
+    function renderAlbums() {
+      grid.innerHTML = '';
+      initObserver();
+
+      let filtered = rawData.filter(([artist, album, year, link, manualCover, id, location, crew]) => {
+        const fullText = `${artist} ${album} ${year} ${location} ${crew}`.toLowerCase();
+        const matchesSearch = fullText.includes(searchQuery.toLowerCase());
+
+        let matchesFilter = true;
+        const cleanYear = (year || '').trim();
+        const y = parseInt(cleanYear);
+
+        if (currentFilter === '90s') matchesFilter = !isNaN(y) && y >= 1989 && y <= 1999;
+        else if (currentFilter === '00s') matchesFilter = !isNaN(y) && y >= 2000 && y <= 2009;
+        else if (currentFilter === '10s') matchesFilter = !isNaN(y) && y >= 2010 && y <= 2019;
+        else if (currentFilter === '20s') matchesFilter = !isNaN(y) && y >= 2020 && y <= 2029;
+        else if (currentFilter === 'sin-fecha') {
+          matchesFilter = isNaN(y) || cleanYear === '' || cleanYear.includes('?') || cleanYear.toUpperCase() === 'S/D';
+        }
+
+        return matchesSearch && matchesFilter;
+      });
+
+      filtered.sort((a, b) => {
+        const indexA = a[5];
+        const indexB = b[5];
+        const yearA = parseInt(a[2]) || 0;
+        const yearB = parseInt(b[2]) || 0;
+
+        if (currentSort === 'desc') return indexB - indexA; // Últimos agregados (por índice descendente de planilla)
+        if (currentSort === 'asc') return yearA - yearB;
+        if (currentSort === 'alpha') return a[0].localeCompare(b[0], 'es');
+        return 0;
+      });
+
+      statsDisplay.textContent = `Mostrando ${filtered.length} de ${rawData.length} discos`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="empty-state">No se encontraron resultados para tu búsqueda.</div>`;
+        return;
+      }
+
+      filtered.forEach(([artist, album, year, link, manualCover, id, location, crew]) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const platform = getPlatform(link);
+
+        card.innerHTML = `
+          <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}" data-manual-cover="${manualCover || ''}">
+            <div class="cover-placeholder">Sin carátula</div>
           </div>
           <div class="card-body">
             <div>
-              <div class="card-title">${item.album}</div>
-              <div class="card-artist">${item.artist}</div>
+              <div class="meta-row">
+                <span class="year-badge" title="Filtrar por año ${year || 'S/D'}" data-year="${year || ''}">${year || 'S/D'}</span>
+              </div>
+              <h3 class="album-title">${album}</h3>
+              <div class="artist-links">${formatArtistLinks(artist)}</div>
             </div>
-            <div class="card-footer">
-              <span>#${item.originalIndex}</span>
-              <a href="index.html?search=${encodeURIComponent(item.year)}" class="card-year" onclick="event.stopPropagation()">${item.year}</a>
+            <div>
+              <span class="btn btn-active">Ver ficha y escuchar →</span>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('filter-tag') || e.target.classList.contains('year-badge')) return;
+          window.location.href = `disco.html?id=${id}`;
+        });
+
+        const coverEl = card.querySelector('.cover-container');
+        if (platform !== 'none' || (manualCover && manualCover !== '')) {
+          observer.observe(coverEl);
+        }
+
+        // Filtro por año al hacer clic en el badge
+        const yearBadge = card.querySelector('.year-badge');
+        if (yearBadge && year) {
+          yearBadge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchInput.value = year;
+            searchQuery = year;
+            currentFilter = 'all';
+            filterButtons.forEach(b => b.classList.remove('active'));
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+            updateURLParams();
+            renderAlbums();
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          });
+        }
+
+        // Filtro por artista o tags
+        card.querySelectorAll('.filter-tag').forEach(tag => {
+          tag.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = tag.dataset.search;
+            searchInput.value = val;
+            searchQuery = val;
+            currentFilter = 'all';
+            filterButtons.forEach(b => b.classList.remove('active'));
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+            updateURLParams();
+            renderAlbums();
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          });
+        });
+
+        grid.appendChild(card);
+      });
     }
 
-    document.getElementById('searchInput').addEventListener('input', renderCatalog);
-    document.getElementById('sortSelect').addEventListener('change', renderCatalog);
+    async function init() {
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+        rawData = processSheetRows(rows);
+        updateHeaderMosaic();
 
-    loadCatalog();
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.has('q')) {
+          searchQuery = urlParams.get('q');
+          searchInput.value = searchQuery;
+        }
+
+        if (urlParams.has('filtro')) {
+          const paramFilter = urlParams.get('filtro');
+          const targetBtn = document.querySelector(`.filter-btn[data-filter="${paramFilter}"]`);
+          if (targetBtn) {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            targetBtn.classList.add('active');
+            currentFilter = paramFilter;
+          }
+        }
+
+        if (urlParams.has('orden')) {
+          const paramSort = urlParams.get('orden');
+          if (['alpha', 'asc', 'desc'].includes(paramSort)) {
+            currentSort = paramSort;
+            sortSelect.value = paramSort;
+          }
+        }
+
+        renderAlbums();
+      } catch (err) {
+        statsDisplay.textContent = 'Error al cargar los datos desde Google Sheets.';
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      clearTimeout(window.mosaicResizeTimer);
+      window.mosaicResizeTimer = setTimeout(updateHeaderMosaic, 250);
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      updateURLParams();
+      renderAlbums();
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+      currentSort = e.target.value;
+      updateURLParams();
+      renderAlbums();
+    });
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        updateURLParams();
+        renderAlbums();
+      });
+    });
+
+    init();
   </script>
 </body>
 </html>
