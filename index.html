@@ -8,13 +8,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Archivo del Rap Argentino">
   <meta property="og:description" content="Catálogo discográfico histórico y contemporáneo del hip hop argentino (1989-presente).">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&h=630&q=80">
   <meta property="og:locale" content="es_AR">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Archivo del Rap Argentino">
-  <meta name="twitter:description" content="Catálogo discográfico histórico y contemporáneo del hip hop argentino (1989-presente).">
-  <meta name="twitter:image" content="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&h=630&q=80">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,8 +25,6 @@
       --btn-bg: #18181b;
       --btn-text: #ffffff;
       --btn-hover: #27272a;
-      --disabled-bg: #f4f4f5;
-      --disabled-text: #a1a1aa;
       --radius: 8px;
     }
 
@@ -84,7 +76,6 @@
       color: var(--text-muted);
       margin-top: 4px;
       font-size: 0.9rem;
-      font-weight: 400;
     }
 
     .header-mosaic {
@@ -272,6 +263,13 @@
       background-color: var(--badge-bg);
       padding: 2px 6px;
       border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .year-badge:hover {
+      background-color: var(--text);
+      color: #ffffff;
     }
 
     .album-title {
@@ -290,13 +288,13 @@
       line-height: 1.4;
     }
 
-    .artist-tag {
+    .filter-tag {
       cursor: pointer;
       display: inline;
       transition: color 0.15s ease;
     }
 
-    .artist-tag:hover {
+    .filter-tag:hover {
       color: var(--text);
       text-decoration: underline;
     }
@@ -313,7 +311,6 @@
       font-weight: 500;
       cursor: pointer;
       border: none;
-      transition: background-color 0.15s ease;
       font-family: inherit;
     }
 
@@ -353,12 +350,12 @@
     <div class="controls">
       <div class="top-controls">
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Buscar artista, disco o año...">
+          <input type="text" id="searchInput" placeholder="Buscar artista, disco, año, ubicación...">
         </div>
         <select id="sortSelect" class="sort-select" aria-label="Ordenar discos">
-          <option value="alpha" selected>Artista (A → Z)</option>
+          <option value="desc" selected>Últimos agregados (Más recientes)</option>
+          <option value="alpha">Artista (A → Z)</option>
           <option value="asc">Más antiguos (1989 → Hoy)</option>
-          <option value="desc">Más recientes (Hoy → 1989)</option>
         </select>
       </div>
 
@@ -372,7 +369,7 @@
       </div>
     </div>
 
-    <div class="stats" id="statsDisplay">Conectando con Google Sheets...</div>
+    <div class="stats" id="statsDisplay">Cargando catálogo...</div>
     <main class="grid" id="albumGrid"></main>
   </div>
 
@@ -389,7 +386,7 @@
 
     let currentFilter = 'all';
     let searchQuery = '';
-    let currentSort = 'alpha';
+    let currentSort = 'desc'; // Por defecto por orden de carga / recientes
 
     const PRESERVED_GROUPS = [
       'Illya Kuryaki & The Valderramas',
@@ -408,7 +405,7 @@
       const params = new URLSearchParams();
       if (searchQuery) params.set('q', searchQuery);
       if (currentFilter && currentFilter !== 'all') params.set('filtro', currentFilter);
-      if (currentSort && currentSort !== 'alpha') params.set('orden', currentSort);
+      if (currentSort && currentSort !== 'desc') params.set('orden', currentSort);
 
       const qs = params.toString();
       const newPath = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
@@ -456,6 +453,8 @@
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
         let manualCover = (cols[3] || '').trim();
+        let location = (cols[5] || '').trim();
+        let crew = (cols[6] || '').trim();
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
@@ -466,19 +465,16 @@
           album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        return [artist, album, year, link, manualCover, index];
+        return [artist, album, year, link, manualCover, index, location, crew];
       });
     }
 
     function formatArtistLinks(artistString) {
       const cleanName = artistString.trim();
-
-      const isPreserved = PRESERVED_GROUPS.some(
-        group => group.toLowerCase() === cleanName.toLowerCase()
-      );
+      const isPreserved = PRESERVED_GROUPS.some(group => group.toLowerCase() === cleanName.toLowerCase());
 
       if (isPreserved) {
-        return `<span class="artist-tag" data-artist="${cleanName}">${cleanName}</span>`;
+        return `<span class="filter-tag" data-search="${cleanName}">${cleanName}</span>`;
       }
 
       const separators = /(?:,\s*|\s+&\s+|\s+y\s+|\s+x\s+)/i;
@@ -487,7 +483,7 @@
       return rawParts
         .map(name => name.trim())
         .filter(name => name.length > 0)
-        .map(name => `<span class="artist-tag" data-artist="${name}">${name}</span>`)
+        .map(name => `<span class="filter-tag" data-search="${name}">${name}</span>`)
         .join(', ');
     }
 
@@ -703,8 +699,8 @@
       grid.innerHTML = '';
       initObserver();
 
-      let filtered = rawData.filter(([artist, album, year, link, manualCover, id]) => {
-        const fullText = `${artist} ${album} ${year}`.toLowerCase();
+      let filtered = rawData.filter(([artist, album, year, link, manualCover, id, location, crew]) => {
+        const fullText = `${artist} ${album} ${year} ${location} ${crew}`.toLowerCase();
         const matchesSearch = fullText.includes(searchQuery.toLowerCase());
 
         let matchesFilter = true;
@@ -723,11 +719,13 @@
       });
 
       filtered.sort((a, b) => {
-        const yearA = parseInt(a[2]) || (currentSort === 'asc' ? 9999 : 0);
-        const yearB = parseInt(b[2]) || (currentSort === 'asc' ? 9999 : 0);
+        const indexA = a[5];
+        const indexB = b[5];
+        const yearA = parseInt(a[2]) || 0;
+        const yearB = parseInt(b[2]) || 0;
 
+        if (currentSort === 'desc') return indexB - indexA; // Últimos agregados (por índice descendente de planilla)
         if (currentSort === 'asc') return yearA - yearB;
-        if (currentSort === 'desc') return yearB - yearA;
         if (currentSort === 'alpha') return a[0].localeCompare(b[0], 'es');
         return 0;
       });
@@ -739,10 +737,9 @@
         return;
       }
 
-      filtered.forEach(([artist, album, year, link, manualCover, id]) => {
+      filtered.forEach(([artist, album, year, link, manualCover, id, location, crew]) => {
         const card = document.createElement('div');
         card.className = 'card';
-
         const platform = getPlatform(link);
 
         card.innerHTML = `
@@ -752,7 +749,7 @@
           <div class="card-body">
             <div>
               <div class="meta-row">
-                <span class="year-badge">${year || 'S/D'}</span>
+                <span class="year-badge" title="Filtrar por año ${year || 'S/D'}" data-year="${year || ''}">${year || 'S/D'}</span>
               </div>
               <h3 class="album-title">${album}</h3>
               <div class="artist-links">${formatArtistLinks(artist)}</div>
@@ -763,9 +760,8 @@
           </div>
         `;
 
-        // Al hacer clic en cualquier parte de la tarjeta, abre disco.html
         card.addEventListener('click', (e) => {
-          if (e.target.classList.contains('artist-tag')) return; // No redirige si se hace clic en el nombre del artista para filtrar
+          if (e.target.classList.contains('filter-tag') || e.target.classList.contains('year-badge')) return;
           window.location.href = `disco.html?id=${id}`;
         });
 
@@ -774,20 +770,32 @@
           observer.observe(coverEl);
         }
 
-        const artistTags = card.querySelectorAll('.artist-tag');
-        artistTags.forEach(tag => {
-          tag.addEventListener('click', (e) => {
+        // Filtro por año al hacer clic en el badge
+        const yearBadge = card.querySelector('.year-badge');
+        if (yearBadge && year) {
+          yearBadge.addEventListener('click', (e) => {
             e.stopPropagation();
-            const selectedArtist = tag.dataset.artist;
-
-            searchInput.value = selectedArtist;
-            searchQuery = selectedArtist;
-
+            searchInput.value = year;
+            searchQuery = year;
             currentFilter = 'all';
             filterButtons.forEach(b => b.classList.remove('active'));
-            const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-            if (allBtn) allBtn.classList.add('active');
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+            updateURLParams();
+            renderAlbums();
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          });
+        }
 
+        // Filtro por artista o tags
+        card.querySelectorAll('.filter-tag').forEach(tag => {
+          tag.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = tag.dataset.search;
+            searchInput.value = val;
+            searchQuery = val;
+            currentFilter = 'all';
+            filterButtons.forEach(b => b.classList.remove('active'));
+            document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
             updateURLParams();
             renderAlbums();
             window.scrollTo({ top: 120, behavior: 'smooth' });
@@ -834,7 +842,7 @@
 
         renderAlbums();
       } catch (err) {
-        statsDisplay.textContent = 'Error al cargar los datos desde Google Sheets. Verifica que el archivo esté publicado en la web como CSV.';
+        statsDisplay.textContent = 'Error al cargar los datos desde Google Sheets.';
       }
     }
 
