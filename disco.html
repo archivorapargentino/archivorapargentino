@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cargando disco... | Archivo del Rap Argentino</title>
+  <title>Ficha de Disco | Archivo del Rap Argentino</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +18,7 @@
       --border-subtle: #f4f4f5;
       --btn-bg: #18181b;
       --btn-text: #ffffff;
+      --btn-hover: #27272a;
       --radius: 8px;
     }
 
@@ -75,7 +76,7 @@
       padding: 0 20px;
     }
 
-    .loading-state, .error-state {
+    #statusMessage {
       text-align: center;
       padding: 80px 20px;
       color: var(--text-muted);
@@ -96,6 +97,7 @@
       }
     }
 
+    /* Columna Izquierda */
     .album-cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -144,7 +146,20 @@
     .meta-item:last-child { margin-bottom: 0; }
     .meta-label { color: var(--text-muted); }
     .meta-value { font-weight: 600; text-align: right; max-width: 65%; word-break: break-word; }
+    
+    /* Enlaces interactivos en las categorías de la ficha técnica */
+    .meta-value a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--text-muted);
+      transition: color 0.15s ease;
+    }
+    .meta-value a:hover {
+      color: #2563eb;
+      border-color: #2563eb;
+    }
 
+    /* Columna Derecha */
     .album-header { margin-bottom: 24px; }
 
     .album-header h1 {
@@ -204,7 +219,7 @@
       transition: background-color 0.15s ease;
     }
 
-    .btn-external:hover { background-color: #27272a; }
+    .btn-external:hover { background-color: var(--btn-hover); }
 
     .btn-secondary {
       display: inline-flex;
@@ -226,6 +241,7 @@
       border-color: #000000;
     }
 
+    /* Módulo de Tracklist */
     .tracklist-box {
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -259,11 +275,35 @@
       user-select: none;
     }
 
-    .track-row.interactive { cursor: pointer; }
-    .track-row.interactive:hover { background-color: var(--border-subtle); color: #000000; }
-    .track-title-col { display: flex; align-items: center; gap: 10px; }
-    .track-num { color: var(--text-muted); font-size: 0.8rem; width: 24px; }
-    .track-time { font-family: monospace; font-size: 0.82rem; color: var(--text-muted); background-color: var(--border-subtle); padding: 2px 6px; border-radius: 4px; }
+    .track-row.interactive {
+      cursor: pointer;
+    }
+
+    .track-row.interactive:hover {
+      background-color: var(--border-subtle);
+      color: #000000;
+    }
+
+    .track-title-col {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .track-num {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      width: 24px;
+    }
+
+    .track-time {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background-color: var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -278,9 +318,10 @@
   </nav>
 
   <main class="container">
-    <div id="statusMessage" class="loading-state">Cargando información del disco...</div>
+    <div id="statusMessage">Cargando información del disco...</div>
 
     <div id="detailView" class="detail-grid" style="display: none;">
+      <!-- Izquierda -->
       <div>
         <div class="album-cover-box" id="coverBox">
           <span style="color: var(--text-muted); font-size: 0.85rem;">Sin carátula</span>
@@ -318,6 +359,7 @@
         </div>
       </div>
 
+      <!-- Derecha -->
       <div>
         <header class="album-header">
           <h1 id="albumTitle">-</h1>
@@ -535,88 +577,100 @@
     }
 
     async function init() {
-      const statusEl = document.getElementById('statusMessage');
-      const detailEl = document.getElementById('detailView');
+      const msg = document.getElementById('statusMessage');
+      const view = document.getElementById('detailView');
 
-      const urlParams = new URLSearchParams(window.location.search);
-      let albumIndex = parseInt(urlParams.get('id'));
+      const params = new URLSearchParams(window.location.search);
+      let rawId = params.get('id');
+      let id = parseInt(rawId);
 
-      if (isNaN(albumIndex) || albumIndex < 0) {
-        statusEl.className = 'error-state';
-        statusEl.innerHTML = 'ID de disco no especificado o inválido. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
-        return;
+      if (isNaN(id) || id < 0) {
+        id = 1;
       }
 
       try {
-        const response = await fetch(SHEET_CSV_URL);
-        if (!response.ok) throw new Error('Error al conectar con la planilla CSV');
-        const csvText = await response.text();
-        const rows = parseCSV(csvText);
+        const res = await fetch(SHEET_CSV_URL);
+        if (!res.ok) throw new Error("No se pudo conectar con la base de datos.");
+        const text = await res.text();
+        const allRows = parseCSV(text);
 
-        if (albumIndex >= rows.length) {
-          statusEl.className = 'error-state';
-          statusEl.innerHTML = `El disco #${albumIndex} no fue encontrado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
+        if (allRows.length === 0) {
+          msg.innerHTML = "Planilla vacía.";
           return;
         }
 
-        const cols = rows[albumIndex] || [];
-        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let startIndex = 0;
+        const firstCell = (allRows[0][0] || '').toLowerCase();
+        if (firstCell.includes('catálogo') || firstCell.includes('catalogo') || firstCell.includes('artista')) {
+          startIndex = 1;
+        }
+
+        let targetRowIndex = startIndex + id;
+        if (!allRows[targetRowIndex]) {
+          targetRowIndex = id;
+        }
+
+        if (!allRows[targetRowIndex]) {
+          msg.innerHTML = `No se encontró el registro #${id}. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
+          return;
+        }
+
+        const cols = allRows[targetRowIndex] || [];
+        let rawTitle = (cols[0] || 'Sin título').replace(/^Hoja \d+\s*/i, '').trim();
         let year = (cols[1] || '').trim();
         let link = (cols[2] || '').trim();
-        let manualCover = (cols[3] || '').trim();
+        let cover = (cols[3] || '').trim();
         let tracklistData = (cols[4] || '').trim();
-        let locationData = (cols[5] || '').trim(); // F: Ubicación
-        let crewData = (cols[6] || '').trim();     // G: Crew / Sello
+        let ubicacion = (cols[5] || '').trim();
+        let crew = (cols[6] || '').trim();
 
-        let artist = rawArtistAlbum;
-        let album = rawArtistAlbum;
-
-        if (rawArtistAlbum.includes(' - ')) {
-          const parts = rawArtistAlbum.split(' - ');
-          artist = parts[0].trim();
-          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        let artista = rawTitle;
+        let disco = rawTitle;
+        if (rawTitle.includes(' - ')) {
+          let partes = rawTitle.split(' - ');
+          artista = partes[0].trim();
+          disco = partes.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
         }
 
-        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        // Títulos de la página
+        document.title = `${disco} - ${artista} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = disco;
+        document.getElementById('artistName').textContent = artista;
+
+        // Ficha técnica con categorías separadas como enlaces interactivos hacia index.html
+        document.getElementById('metaArtist').innerHTML = artista !== '-' ? `<a href="index.html?search=${encodeURIComponent(artista)}">${artista}</a>` : '-';
+        document.getElementById('metaAlbum').innerHTML = disco !== '-' ? `<a href="index.html?search=${encodeURIComponent(disco)}">${disco}</a>` : '-';
+        document.getElementById('metaYear').innerHTML = year ? `<a href="index.html?search=${encodeURIComponent(year)}">${year}</a>` : '-';
+        document.getElementById('metaLocation').innerHTML = ubicacion ? `<a href="index.html?search=${encodeURIComponent(ubicacion)}">${ubicacion}</a>` : '-';
+        document.getElementById('metaCrew').innerHTML = crew ? `<a href="index.html?search=${encodeURIComponent(crew)}">${crew}</a>` : '-';
         
-        // Rellenar campos de la cabecera y ficha técnica
-        document.getElementById('albumTitle').textContent = album;
-        document.getElementById('artistName').textContent = artist;
-        document.getElementById('metaArtist').textContent = artist || '-';
-        document.getElementById('metaAlbum').textContent = album || '-';
-        document.getElementById('metaYear').textContent = year || '-';
-        document.getElementById('metaLocation').textContent = locationData || '-';
-        document.getElementById('metaCrew').textContent = crewData || '-';
         document.getElementById('metaPlatform').textContent = getPlatform(link);
-        document.getElementById('metaId').textContent = `#${albumIndex}`;
+        document.getElementById('metaId').textContent = `#${id}`;
 
         const btnExt = document.getElementById('btnExternal');
-        if (btnExt) {
-          if (link) {
-            btnExt.href = link;
-          } else {
-            btnExt.style.display = 'none';
-          }
+        if (link) {
+          btnExt.href = link;
+        } else {
+          btnExt.style.display = 'none';
         }
 
-        // Enlace dinámico hacia colaborar.html
-        const btnCompletar = document.getElementById('btnCompletar');
-        if (btnCompletar) {
-          const params = new URLSearchParams({
-            id: albumIndex,
-            artista: artist,
-            titulo: album,
-            anio: year || '',
-            enlace: link || '',
-            ubicacion: locationData || '',
-            crew: crewData || ''
-          });
-          btnCompletar.href = `colaborar.html?${params.toString()}`;
-        }
+        // Enlace de corrección a colaborar.html
+        const editParams = new URLSearchParams({
+          id: id,
+          artista: artista,
+          titulo: disco,
+          anio: year,
+          enlace: link,
+          ciudad: ubicacion,
+          crew: crew
+        });
+        document.getElementById('btnCompletar').href = `colaborar.html?${editParams.toString()}`;
 
-        statusEl.style.display = 'none';
-        detailEl.style.display = 'grid';
+        msg.style.display = 'none';
+        view.style.display = 'grid';
 
+        // Carátula
+        const coverBox = document.getElementById('coverBox');
         let firstTrackId = '';
         if (tracklistData && tracklistData.includes('|')) {
           const firstLine = tracklistData.split(/[\r\n]+/)[0];
@@ -625,32 +679,29 @@
           }
         }
 
-        const coverBox = document.getElementById('coverBox');
         const ytId = extractYouTubeId(link) || firstTrackId;
-        if (coverBox) {
-          if (manualCover) {
-            coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
-          } else if (ytId) {
-            coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
-          } else if (link.includes('spotify.com')) {
-            fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
-              .then(r => r.json())
-              .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
-              .catch(() => {});
-          } else if (link.includes('soundcloud.com')) {
-            fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
-              .then(r => r.json())
-              .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${album}">`; })
-              .catch(() => {});
-          }
+
+        if (cover) {
+          coverBox.innerHTML = `<img src="${cover}" alt="${disco}">`;
+        } else if (ytId) {
+          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${disco}">`;
+        } else if (link.includes('spotify.com')) {
+          fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
+            .then(r => r.json())
+            .then(d => { if (d && d.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${disco}">`; })
+            .catch(() => {});
+        } else if (link.includes('soundcloud.com')) {
+          fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
+            .then(r => r.json())
+            .then(d => { if (d && d.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${disco}">`; })
+            .catch(() => {});
         }
 
         renderPlayer(link, firstTrackId);
         renderTracklist(tracklistData, link.includes('youtube.com') || link.includes('youtu.be'));
 
       } catch (err) {
-        statusEl.className = 'error-state';
-        statusEl.innerHTML = `Error al cargar la ficha del archivo: ${err.message}. Intenta recargar la página.`;
+        msg.innerHTML = `<strong>Error de carga:</strong> ${err.message}<br><br><a href="index.html" class="back-link">Volver al catálogo</a>`;
       }
     }
 
