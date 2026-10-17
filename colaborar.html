@@ -47,59 +47,41 @@
       transition: color 0.15s ease;
     }
 
-    .nav-link:hover, .nav-link.active { color: var(--text); }
+    .nav-link:hover, .nav-link.active {
+      color: var(--text);
+    }
 
     .content-container {
       max-width: 680px;
       margin: 0 auto;
-      padding: 40px 20px 100px;
+      padding: 50px 20px 100px;
     }
 
     h1 {
-      font-size: 2.1rem;
+      font-size: 2.2rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       margin-bottom: 8px;
     }
 
     .lead {
-      font-size: 0.95rem;
+      font-size: 0.98rem;
       color: var(--text-muted);
-      margin-bottom: 24px;
+      margin-bottom: 32px;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 16px;
-    }
-
-    .alert-banner {
-      display: none;
-      margin-bottom: 24px;
-      padding: 14px 18px;
-      border-radius: var(--radius);
-      background-color: var(--border-subtle);
-      border-left: 4px solid var(--btn-bg);
-      font-size: 0.88rem;
+      padding-bottom: 20px;
     }
 
     form {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 20px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 600px) {
-      .form-row { grid-template-columns: 1fr; }
     }
 
     label {
@@ -113,7 +95,7 @@
       color: var(--text-muted);
     }
 
-    input, select, textarea {
+    input, textarea {
       padding: 11px 14px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
@@ -125,17 +107,8 @@
       transition: border-color 0.15s ease;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus, textarea:focus {
       border-color: var(--text);
-    }
-
-    /* Campos bloqueados */
-    .locked-input {
-      background-color: var(--border-subtle) !important;
-      color: var(--text-muted) !important;
-      cursor: not-allowed;
-      border-color: var(--border) !important;
-      pointer-events: none; /* Bloquea edición y clicks sin deshabilitar el envío */
     }
 
     textarea {
@@ -156,7 +129,9 @@
       margin-top: 10px;
     }
 
-    .submit-btn:hover { background-color: var(--btn-hover); }
+    .submit-btn:hover {
+      background-color: var(--btn-hover);
+    }
 
     .submit-btn:disabled {
       background-color: var(--text-muted);
@@ -186,18 +161,12 @@
       padding-bottom: 2px;
     }
 
-    #hidden_iframe {
-      display: none;
-      width: 0;
-      height: 0;
-      border: 0;
+    .back-btn:hover {
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
-
-  <!-- Iframe receptor para evitar recarga de pantalla -->
-  <iframe name="hidden_iframe" id="hidden_iframe"></iframe>
 
   <nav class="top-nav">
     <a href="index.html" class="nav-link">Catálogo</a>
@@ -206,105 +175,43 @@
   </nav>
 
   <main class="content-container">
-    <h1 id="pageTitle">Registro de Obra Musical</h1>
-    <p class="lead" id="pageLead">Completá la ficha técnica para registrar un nuevo material o corregir datos en el archivo.</p>
+    <h1>Sumá un lanzamiento</h1>
+    <p class="lead">¿Conoces un álbum, EP o mixtape que falte en el archivo, o tienes información precisa para corregir una fecha? Completa los datos a continuación.</p>
 
-    <div id="editAlert" class="alert-banner">
-      Completando información de la ficha técnica <strong id="badgeId">#</strong>. Los datos preexistentes se encuentran bloqueados. Podés agregar la información faltante y usar el campo de notas para proponer cambios sobre los datos cargados.
-    </div>
-
-    <!-- Envío nativo a Google Forms -->
-    <form id="collabForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse" method="POST" target="hidden_iframe">
-      <input type="hidden" id="disco_id" value="">
-
+    <form id="collabForm">
       <div class="form-group">
         <label for="artist">Artista o Agrupación *</label>
         <span class="field-hint">Ejemplo: Actitud María Marta, Illya Kuryaki & The Valderramas, T&K</span>
-        <input type="text" id="artist" name="entry.2128002775" required placeholder="Nombre del artista o grupo">
+        <input type="text" id="artist" required placeholder="Nombre del artista o grupo">
       </div>
 
       <div class="form-group">
-        <label for="album">Título del Disco u Obra *</label>
+        <label for="album">Título del Disco / Obra *</label>
         <span class="field-hint">Nombre del álbum, EP o mixtape</span>
-        <input type="text" id="album" name="entry.1799273274" required placeholder="Título de la obra">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="year">Año de Publicación</label>
-          <span class="field-hint">Ejemplo: 1997 o 1998?</span>
-          <input type="text" id="year" name="entry.1887365238" placeholder="Ej: 1997">
-        </div>
-
-        <div class="form-group">
-          <label for="link">Enlace de Audio *</label>
-          <span class="field-hint">Spotify, YouTube o Bandcamp</span>
-          <input type="url" id="link" name="entry.1726588647" required placeholder="https://open.spotify.com/... o https://youtube.com/...">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="provincia">Provincia</label>
-          <select id="provincia" name="entry.1497464508">
-            <option value="" selected>Seleccionar provincia...</option>
-            <option value="CABA">CABA</option>
-            <option value="Buenos Aires">Buenos Aires</option>
-            <option value="Catamarca">Catamarca</option>
-            <option value="Chaco">Chaco</option>
-            <option value="Chubut">Chubut</option>
-            <option value="Córdoba">Córdoba</option>
-            <option value="Corrientes">Corrientes</option>
-            <option value="Entre Ríos">Entre Ríos</option>
-            <option value="Formosa">Formosa</option>
-            <option value="La Pampa">La Pampa</option>
-            <option value="La Rioja">La Rioja</option>
-            <option value="Mendoza">Mendoza</option>
-            <option value="Misiones">Misiones</option>
-            <option value="Neuquén">Neuquén</option>
-            <option value="Río Negro">Río Negro</option>
-            <option value="Salta">Salta</option>
-            <option value="San Juan">San Juan</option>
-            <option value="San Luis">San Luis</option>
-            <option value="Santa Cruz">Santa Cruz</option>
-            <option value="Santa Fe">Santa Fe</option>
-            <option value="Santiago del Estero">Santiago del Estero</option>
-            <option value="Tierra del Fuego">Tierra del Fuego</option>
-            <option value="Tucumán">Tucumán</option>
-            <option value="Interprovincial / Varias">Interprovincial / Varias</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="ciudad">Ciudad / Municipio / Partido</label>
-          <span class="field-hint">Ej: Lanús, Morón, Rosario, CABA</span>
-          <input type="text" id="ciudad" name="entry.1311656962" placeholder="Ciudad o partido">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="barrio">Barrio / Localidad / Zona</label>
-          <span class="field-hint">Ej: Valentín Alsina, La Boca</span>
-          <input type="text" id="barrio" name="entry.747892958" placeholder="Barrio específico">
-        </div>
-
-        <div class="form-group">
-          <label for="crew">Crew / Sello</label>
-          <span class="field-hint">Ej: Pantera Records, Raptores</span>
-          <input type="text" id="crew" name="entry.1887116427" placeholder="Crew o sello discográfico">
-        </div>
+        <input type="text" id="album" required placeholder="Título del álbum">
       </div>
 
       <div class="form-group">
-        <label for="notes" id="lblNotes">Notas o Datos Adicionales</label>
-        <span class="field-hint" id="hintNotes">Formato original (casete, CD), contexto o sugerencia de corrección.</span>
-        <textarea id="notes" name="entry.800104356" placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
+        <label for="year">Año de Publicación</label>
+        <span class="field-hint">Si no estás seguro o es aproximado, indícalo (ej: 1998 o 1998?)</span>
+        <input type="text" id="year" placeholder="Ej: 1997">
+      </div>
+
+      <div class="form-group">
+        <label for="link">Enlace de Audio (Spotify, YouTube o Bandcamp)</label>
+        <span class="field-hint">Pega el link para escuchar el disco completo</span>
+        <input type="url" id="link" placeholder="https://open.spotify.com/... o https://youtube.com/...">
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Notas o Datos Adicionales</label>
+        <span class="field-hint">Formato original (casete, CD), sello, ciudad o aclaraciones</span>
+        <textarea id="notes" placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
       </div>
 
       <div class="form-group">
         <label for="contact">Tu Nombre o Contacto (Opcional)</label>
-        <input type="text" id="contact" name="entry.395661196" placeholder="Tu nombre, usuario o email para darte crédito">
+        <input type="text" id="contact" placeholder="Tu nombre, usuario o email para darte crédito">
       </div>
 
       <button type="submit" id="submitBtn" class="submit-btn">Enviar propuesta al archivo</button>
@@ -312,81 +219,57 @@
 
     <div id="successMsg" class="success-message">
       <strong>¡Aporte recibido!</strong><br>
-      Muchas gracias por colaborar. Los datos fueron registrados en la planilla de respuestas y serán verificados para consolidarse en el catálogo general.
+      Muchas gracias por colaborar. Los datos fueron registrados en nuestra planilla y serán revisados para sumarse al catálogo general.
     </div>
 
     <a href="index.html" class="back-btn">← Volver al catálogo</a>
   </main>
 
   <script>
-    let submitted = false;
+    // Configuración exacta con tu Google Form
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse';
 
-    // Detecta cuando Google Forms procesó el envío dentro del iframe
-    document.getElementById('hidden_iframe').addEventListener('load', () => {
-      if (submitted) {
-        document.getElementById('collabForm').style.display = 'none';
-        const alertBox = document.getElementById('editAlert');
-        if (alertBox) alertBox.style.display = 'none';
-        document.getElementById('successMsg').style.display = 'block';
-        window.scrollTo({ top: 100, behavior: 'smooth' });
-      }
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const discoId = params.get('id');
-
-      if (discoId !== null && discoId !== '') {
-        document.getElementById('disco_id').value = discoId;
-        document.getElementById('badgeId').textContent = `#${discoId}`;
-        document.getElementById('editAlert').style.display = 'block';
-
-        document.getElementById('pageTitle').textContent = 'Completar o Rectificar Ficha';
-        document.getElementById('pageLead').textContent = 'Los campos preexistentes están bloqueados. Completá los datos territoriales y técnicos restantes o proponé correcciones en notas.';
-        document.getElementById('lblNotes').textContent = 'Propuestas de modificación o notas adicionales';
-        document.getElementById('hintNotes').textContent = 'Indicá aquí qué datos de los ya registrados necesitan corregirse.';
-        document.getElementById('notes').placeholder = 'Ej: El año correcto de salida es 2018 y el productor principal es...';
-        document.getElementById('submitBtn').textContent = 'Enviar datos faltantes / corrección';
-
-        // Bloqueo visual sin deshabilitar para asegurar que el dato viaje a Google Forms
-        const lockField = (elemId, val) => {
-          const elem = document.getElementById(elemId);
-          if (val && elem) {
-            elem.value = val;
-            elem.readOnly = true;
-            elem.classList.add('locked-input');
-          }
-        };
-
-        lockField('artist', params.get('artista'));
-        lockField('album', params.get('titulo'));
-        lockField('year', params.get('anio'));
-        lockField('link', params.get('enlace'));
-        lockField('crew', params.get('crew'));
-
-        const ubicacionParam = params.get('ubicacion');
-        if (ubicacionParam) {
-          lockField('ciudad', ubicacionParam);
-        }
-      }
-    });
+    const FIELD_IDS = {
+      artist:  'entry.2128002775',
+      album:   'entry.1799273274',
+      year:    'entry.1887365238',
+      link:    'entry.1726588647',
+      notes:   'entry.800104356',
+      contact: 'entry.395661196'
+    };
 
     const form = document.getElementById('collabForm');
     const submitBtn = document.getElementById('submitBtn');
+    const successMsg = document.getElementById('successMsg');
 
-    form.addEventListener('submit', () => {
-      submitted = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando a la planilla...';
+      submitBtn.textContent = 'Enviando...';
 
-      // Incluye el tag de revisión si viene de un disco existente
-      const discoId = document.getElementById('disco_id').value;
-      const notesEl = document.getElementById('notes');
-      if (discoId && notesEl) {
-        const prefijo = `[REVISIÓN / FALTANTES DISCO #${discoId}]`;
-        if (!notesEl.value.includes(prefijo)) {
-          notesEl.value = notesEl.value ? `${prefijo} ${notesEl.value.trim()}` : prefijo;
-        }
+      const formData = new FormData();
+      formData.append(FIELD_IDS.artist, document.getElementById('artist').value.trim());
+      formData.append(FIELD_IDS.album, document.getElementById('album').value.trim());
+      formData.append(FIELD_IDS.year, document.getElementById('year').value.trim());
+      formData.append(FIELD_IDS.link, document.getElementById('link').value.trim());
+      formData.append(FIELD_IDS.notes, document.getElementById('notes').value.trim());
+      formData.append(FIELD_IDS.contact, document.getElementById('contact').value.trim());
+
+      try {
+        await fetch(GOOGLE_FORM_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: formData
+        });
+
+        form.reset();
+        form.style.display = 'none';
+        successMsg.style.display = 'block';
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+      } catch (err) {
+        alert('Ocurrió un error al enviar el formulario. Por favor, intenta nuevamente.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enviar propuesta al archivo';
       }
     });
   </script>
