@@ -288,13 +288,13 @@
       line-height: 1.4;
     }
 
-    .filter-tag {
+    .artist-tag {
       cursor: pointer;
       display: inline;
       transition: color 0.15s ease;
     }
 
-    .filter-tag:hover {
+    .artist-tag:hover {
       color: var(--text);
       text-decoration: underline;
     }
@@ -369,7 +369,7 @@
       </div>
     </div>
 
-    <div class="stats" id="statsDisplay">Cargando catálogo...</div>
+    <div class="stats" id="statsDisplay">Conectando con Google Sheets...</div>
     <main class="grid" id="albumGrid"></main>
   </div>
 
@@ -386,7 +386,7 @@
 
     let currentFilter = 'all';
     let searchQuery = '';
-    let currentSort = 'desc'; // Por defecto por orden de carga / recientes
+    let currentSort = 'desc';
 
     const PRESERVED_GROUPS = [
       'Illya Kuryaki & The Valderramas',
@@ -474,7 +474,7 @@
       const isPreserved = PRESERVED_GROUPS.some(group => group.toLowerCase() === cleanName.toLowerCase());
 
       if (isPreserved) {
-        return `<span class="filter-tag" data-search="${cleanName}">${cleanName}</span>`;
+        return `<span class="artist-tag" data-artist="${cleanName}">${cleanName}</span>`;
       }
 
       const separators = /(?:,\s*|\s+&\s+|\s+y\s+|\s+x\s+)/i;
@@ -483,7 +483,7 @@
       return rawParts
         .map(name => name.trim())
         .filter(name => name.length > 0)
-        .map(name => `<span class="filter-tag" data-search="${name}">${name}</span>`)
+        .map(name => `<span class="artist-tag" data-artist="${name}">${name}</span>`)
         .join(', ');
     }
 
@@ -724,7 +724,7 @@
         const yearA = parseInt(a[2]) || 0;
         const yearB = parseInt(b[2]) || 0;
 
-        if (currentSort === 'desc') return indexB - indexA; // Últimos agregados (por índice descendente de planilla)
+        if (currentSort === 'desc') return indexB - indexA; // Más recientes (últimos agregados)
         if (currentSort === 'asc') return yearA - yearB;
         if (currentSort === 'alpha') return a[0].localeCompare(b[0], 'es');
         return 0;
@@ -761,7 +761,7 @@
         `;
 
         card.addEventListener('click', (e) => {
-          if (e.target.classList.contains('filter-tag') || e.target.classList.contains('year-badge')) return;
+          if (e.target.classList.contains('artist-tag') || e.target.classList.contains('year-badge')) return;
           window.location.href = `disco.html?id=${id}`;
         });
 
@@ -770,7 +770,7 @@
           observer.observe(coverEl);
         }
 
-        // Filtro por año al hacer clic en el badge
+        // Clic en el año para filtrar
         const yearBadge = card.querySelector('.year-badge');
         if (yearBadge && year) {
           yearBadge.addEventListener('click', (e) => {
@@ -786,13 +786,13 @@
           });
         }
 
-        // Filtro por artista o tags
-        card.querySelectorAll('.filter-tag').forEach(tag => {
+        // Clic en artista(s) para filtrar
+        card.querySelectorAll('.artist-tag').forEach(tag => {
           tag.addEventListener('click', (e) => {
             e.stopPropagation();
-            const val = tag.dataset.search;
-            searchInput.value = val;
-            searchQuery = val;
+            const selectedArtist = tag.dataset.artist;
+            searchInput.value = selectedArtist;
+            searchQuery = selectedArtist;
             currentFilter = 'all';
             filterButtons.forEach(b => b.classList.remove('active'));
             document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
