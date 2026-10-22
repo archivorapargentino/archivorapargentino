@@ -344,13 +344,6 @@
       'Illya Kuryaki and the Valderramas'
     ];
 
-    const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
-
-    function saveCoverCache(key, url) {
-      coverCache[key] = url;
-      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
-    }
-
     function parseCSV(text) {
       const rows = [];
       let currentRow = [];
@@ -470,31 +463,14 @@
           if (!bcSrc.includes('tracklist=true')) {
             bcSrc = bcSrc.replace(/\/size=large\//, '/size=large/tracklist=true/');
           }
-          box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">
-            <iframe style="border: 0; width: 100%; max-width: 400px; height: 650px;" src="${bcSrc}" seamless loading="lazy"></iframe>
+          box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%; background: #ffffff; padding: 10px 0; border-radius: 8px;">
+            <iframe style="border: 0; width: 380px; max-width: 100%; height: 680px;" src="${bcSrc}" seamless loading="lazy"></iframe>
           </div>`;
           return;
         }
-
-        fetch(`https://bandcamp.com/api/oembed/1/json?url=${encodeURIComponent(link)}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data && data.html) {
-              let cleanHtml = data.html
-                .replace(/height="[0-9]+"/g, 'height="650"')
-                .replace(/style="[^"]*"/g, 'style="border: 0; width: 100%; max-width: 400px; height: 650px; display: block; margin: 0 auto;"');
-              box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%;">${cleanHtml}</div>`;
-            } else {
-              box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
-                Álbum de Bandcamp listo para escuchar en el botón de abajo.
-              </div>`;
-            }
-          })
-          .catch(() => {
-            box.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-muted); background: var(--border-subtle);">
-              Álbum de Bandcamp listo para escuchar en el botón de abajo.
-            </div>`;
-          });
+        box.innerHTML = `<div style="display: flex; justify-content: center; width: 100%; background: #ffffff; padding: 10px 0; border-radius: 8px;">
+          <iframe style="border: 0; width: 380px; max-width: 100%; height: 680px;" src="https://bandcamp.com/EmbeddedPlayer/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=true/transparent=true/" seamless loading="lazy"></iframe>
+        </div>`;
         return;
       } else if (link.includes('soundcloud.com')) {
         const cleanLink = link.split('?')[0];
@@ -521,7 +497,13 @@
       const tracklistItems = document.getElementById('tracklistItems');
       tracklistItems.innerHTML = '';
 
-      let lines = cleanData.includes('\n') ? cleanData.split(/[\r\n]+/) : cleanData.split(/[,;]+/);
+      let lines = [];
+      if (cleanData.includes('\n')) {
+        lines = cleanData.split(/[\r\n]+/);
+      } else {
+        lines = cleanData.split(/[,;]+/);
+      }
+
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
@@ -533,7 +515,7 @@
         if (titleStr.includes('|')) {
           const parts = titleStr.split('|');
           titleStr = parts[0].trim();
-          trackVideoId = parts[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+          trackVideoId = parts[1].trim().replace(/\.$/, '');
         }
 
         const fullTimeMatch = titleStr.match(/\(?(\d{1,2}:\d{2}(?::\d{2})?)\)?/);
@@ -563,10 +545,14 @@
         if (isYouTube) {
           row.title = `Reproducir tema ${index + 1}`;
           row.addEventListener('click', () => {
+            const frame = document.getElementById('ytPlayerFrame');
+            if (!frame) return;
+
             if (trackVideoId) {
-              setYouTubePlayer(trackVideoId, 0);
+              frame.src = `https://www.youtube.com/embed/${trackVideoId}?autoplay=1`;
             } else if (timeStr && activeYouTubeId) {
-              setYouTubePlayer(activeYouTubeId, parseTimeToSeconds(timeStr));
+              const seconds = parseTimeToSeconds(timeStr);
+              frame.src = `https://www.youtube.com/embed/${activeYouTubeId}?start=${seconds}&autoplay=1`;
             }
           });
         }
@@ -608,8 +594,8 @@
         let link = (cols[2] || '').trim();
         let manualCover = (cols[3] || '').trim();
         let tracklistData = (cols[4] || '').trim();
-        let location = (cols[5] || '').trim();
-        let crew = (cols[6] || '').trim();
+        let locationData = (cols[5] || '').trim(); // Columna F: Ubicación
+        let crewData = (cols[6] || '').trim();     // Columna G: Crew / Sello
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
@@ -624,7 +610,7 @@
         document.getElementById('albumTitle').textContent = album;
         document.getElementById('artistName').innerHTML = formatArtistLinks(artist);
 
-        // Año como enlace de búsqueda
+        // Año interactivo
         const metaYear = document.getElementById('metaYear');
         if (year) {
           metaYear.innerHTML = `<a href="index.html?q=${encodeURIComponent(year)}" class="meta-link">${year}</a>`;
@@ -632,18 +618,18 @@
           metaYear.textContent = 'Sin fecha';
         }
 
-        // Ubicación como enlace de búsqueda
+        // Ubicación interactiva
         const metaLocation = document.getElementById('metaLocation');
-        if (location) {
-          metaLocation.innerHTML = `<a href="index.html?q=${encodeURIComponent(location)}" class="meta-link">${location}</a>`;
+        if (locationData) {
+          metaLocation.innerHTML = `<a href="index.html?q=${encodeURIComponent(locationData)}" class="meta-link">${locationData}</a>`;
         } else {
           metaLocation.textContent = 'No especificada';
         }
 
-        // Crew / Sello como enlace de búsqueda
+        // Crew / Sello interactivo (si está vacío, no muestra texto extra)
         const metaCrew = document.getElementById('metaCrew');
-        if (crew) {
-          metaCrew.innerHTML = `<a href="index.html?q=${encodeURIComponent(crew)}" class="meta-link">${crew}</a>`;
+        if (crewData) {
+          metaCrew.innerHTML = `<a href="index.html?q=${encodeURIComponent(crewData)}" class="meta-link">${crewData}</a>`;
         } else {
           metaCrew.textContent = '-';
         }
@@ -666,8 +652,8 @@
             titulo: album,
             anio: year || '',
             enlace: link || '',
-            ubicacion: location || '',
-            crew: crew || ''
+            ubicacion: locationData || '',
+            crew: crewData || ''
           });
           btnCompletar.href = `colaborar.html?${params.toString()}`;
         }
