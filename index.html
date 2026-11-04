@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,8 @@
 
   <meta property="og:type" content="website">
   <meta property="og:title" content="Archivo del Rap Argentino">
-  <meta property="og:description" content="Catálogo discográfico histórico y contemporáneo del hip hop argentino (1989-presente).">
+  <meta property="og:description"
+    content="Catálogo discográfico histórico y contemporáneo del hip hop argentino (1989-presente).">
   <meta property="og:locale" content="es_AR">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
   <nav class="top-nav">
@@ -38,9 +41,10 @@
           <input type="text" id="searchInput" placeholder="Buscar artista, disco, año, ubicación...">
         </div>
         <select id="sortSelect" class="sort-select" aria-label="Ordenar discos">
-          <option value="desc" selected>Últimos agregados (Más recientes)</option>
-          <option value="alpha">Artista (A → Z)</option>
+          <option value="desc" selected>Últimos agregados</option>
+          <option value="year-desc">Más recientes (Hoy → 1989)</option>
           <option value="asc">Más antiguos (1989 → Hoy)</option>
+          <option value="alpha">Artista (A → Z)</option>
         </select>
       </div>
 
@@ -60,4 +64,5 @@
 
   <script src="js/app.js"></script>
 </body>
+
 </html>

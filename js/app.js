@@ -349,7 +349,20 @@ function renderAlbums() {
     const yearB = parseInt(b[2]) || 0;
 
     if (currentSort === 'desc') return indexB - indexA;
-    if (currentSort === 'asc') return yearA - yearB;
+    if (currentSort === 'year-desc') {
+      if (yearA === 0 && yearB === 0) return indexB - indexA;
+      if (yearA === 0) return 1;
+      if (yearB === 0) return -1;
+      if (yearB !== yearA) return yearB - yearA;
+      return indexB - indexA;
+    }
+    if (currentSort === 'asc') {
+      if (yearA === 0 && yearB === 0) return indexB - indexA;
+      if (yearA === 0) return 1;
+      if (yearB === 0) return -1;
+      if (yearA !== yearB) return yearA - yearB;
+      return indexB - indexA;
+    }
     if (currentSort === 'alpha') return a[0].localeCompare(b[0], 'es');
     return 0;
   });
@@ -456,7 +469,7 @@ async function init() {
 
     if (urlParams.has('orden')) {
       const paramSort = urlParams.get('orden');
-      if (['alpha', 'asc', 'desc'].includes(paramSort)) {
+      if (['alpha', 'asc', 'desc', 'year-desc'].includes(paramSort)) {
         currentSort = paramSort;
         sortSelect.value = paramSort;
       }
