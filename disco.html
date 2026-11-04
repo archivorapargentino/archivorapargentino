@@ -344,6 +344,13 @@
       'Illya Kuryaki and the Valderramas'
     ];
 
+    const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
+
+    function saveCoverCache(key, url) {
+      coverCache[key] = url;
+      try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
+    }
+
     function parseCSV(text) {
       const rows = [];
       let currentRow = [];

@@ -765,6 +765,11 @@
           window.location.href = `disco.html?id=${id}`;
         });
 
+        const coverEl = card.querySelector('.cover-container');
+        if (platform !== 'none' || (manualCover && manualCover !== '')) {
+          observer.observe(coverEl);
+        }
+
         // Clic en el año para filtrar
         const yearBadge = card.querySelector('.year-badge');
         if (yearBadge && year) {
@@ -796,11 +801,6 @@
             window.scrollTo({ top: 120, behavior: 'smooth' });
           });
         });
-
-        const coverEl = card.querySelector('.cover-container');
-        if (platform !== 'none' || (manualCover && manualCover !== '')) {
-          observer.observe(coverEl);
-        }
 
         grid.appendChild(card);
       });
