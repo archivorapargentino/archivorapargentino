@@ -22,7 +22,7 @@ const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
 
 function saveCoverCache(key, url) {
   coverCache[key] = url;
-  try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) {}
+  try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) { }
 }
 
 function updateURLParams() {
@@ -135,7 +135,7 @@ async function fetchSpotifyCover(spotifyUrl) {
       saveCoverCache(spotifyUrl, data.thumbnail_url);
       return data.thumbnail_url;
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -151,7 +151,7 @@ async function fetchBandcampCover(bandcampUrl) {
         return imgUrl;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -166,7 +166,7 @@ async function fetchSoundCloudCover(scUrl) {
       const data = await res.json();
       imgUrl = data.thumbnail_url || null;
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (!imgUrl) {
     try {
@@ -175,7 +175,7 @@ async function fetchSoundCloudCover(scUrl) {
         const jsonMl = await resMl.json();
         imgUrl = jsonMl?.data?.image?.url || null;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   if (imgUrl && imgUrl.includes('-large.jpg')) {
@@ -268,58 +268,7 @@ function updateHeaderMosaic() {
     headerMosaic.appendChild(img);
   });
 }
-  if (!headerMosaic) return;
 
-  const availableSpotify = rawData
-    .filter(([artist, album, year, link, manualCover, id]) => getPlatform(link) === 'spotify' && coverCache[link])
-    .map(([artist, album, year, link, manualCover, id]) => ({
-      artist, album, id, cover: coverCache[link]
-    }));
-
-  const uniqueCoversMap = new Map();
-  availableSpotify.forEach(item => {
-    if (!uniqueCoversMap.has(item.cover)) uniqueCoversMap.set(item.cover, item);
-  });
-
-  const uniqueList = Array.from(uniqueCoversMap.values());
-  if (uniqueList.length < 8) {
-    headerMosaic.style.display = 'none';
-    return;
-  }
-
-  const containerWidth = headerMosaic.clientWidth || 1200;
-  let cols = Math.floor(containerWidth / 78);
-  if (cols < 6) cols = 6;
-  if (cols > 15) cols = 15;
-
-  const totalNeeded = cols * 2;
-  headerMosaic.style.setProperty('--mosaic-cols', cols);
-
-  const randomSelection = shuffleArray(uniqueList).slice(0, totalNeeded);
-  const finalCount = Math.floor(randomSelection.length / cols) * cols;
-  const finalItems = randomSelection.slice(0, finalCount);
-
-  if (finalItems.length === 0) {
-    headerMosaic.style.display = 'none';
-    return;
-  }
-
-  headerMosaic.style.display = 'grid';
-  headerMosaic.innerHTML = '';
-
-  finalItems.forEach(item => {
-    const img = document.createElement('img');
-    img.src = item.cover;
-    img.className = 'mosaic-thumb';
-    img.alt = `${item.album} - ${item.artist}`;
-    img.title = `${item.artist} - ${item.album} (Clic para ver ficha)`;
-    img.loading = 'lazy';
-    img.addEventListener('click', () => {
-      window.location.href = `disco.html?id=${item.id}`;
-    });
-    headerMosaic.appendChild(img);
-  });
-}
 
 let observer;
 const requestQueue = [];
