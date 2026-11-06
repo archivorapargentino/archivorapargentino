@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<!-- Mapa actualizado para usar CSV de Google Sheets -->
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  
   <style>
     :root {
       --bg: #ffffff;
@@ -21,13 +19,7 @@
       --border: #e4e4e7;
       --radius: 8px;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg);
       color: var(--text);
@@ -36,7 +28,6 @@
       flex-direction: column;
       height: 100vh;
     }
-
     .top-nav {
       max-width: 1100px;
       width: 100%;
@@ -47,7 +38,6 @@
       align-items: center;
       border-bottom: 1px solid var(--border);
     }
-
     .back-link {
       font-size: 0.88rem;
       font-weight: 500;
@@ -58,34 +48,26 @@
       border-radius: var(--radius);
       transition: background-color 0.15s ease;
     }
-
-    .back-link:hover {
-      background-color: #f4f4f5;
-    }
-
+    .back-link:hover { background-color: #f4f4f5; }
     #map {
       flex: 1;
       width: 100%;
       background: #f4f4f5;
     }
-
     .leaflet-popup-content-wrapper {
       border-radius: var(--radius);
       font-family: 'Inter', sans-serif;
     }
-
     .popup-title {
       font-weight: 600;
       font-size: 0.95rem;
       margin-bottom: 4px;
     }
-
     .popup-meta {
       font-size: 0.82rem;
       color: var(--text-muted);
       margin-bottom: 8px;
     }
-
     .popup-link {
       display: inline-block;
       font-size: 0.82rem;
@@ -95,7 +77,6 @@
     }
   </style>
 </head>
-
 <body>
 
   <nav class="top-nav">
@@ -108,15 +89,15 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
-    // Tu nuevo enlace CSV nativo de Google Sheets integrado
+    // Enlace CSV nativo de Google Sheets integrado
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQM10NnmHnP1UPPF7EU1EOBF5vI9pTXPyj1MbcIoKUZyt9k8ovtbuURMMekuAuYFMYaHGw9UNdss8em/pub?output=csv';
 
     // Inicializar mapa centrado en Argentina
     const map = L.map('map').setView([-38.4161, -63.6167], 5);
 
-    // Capa de mapa estilo Voyager (CartoDB) con API key
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { \n      maxZoom: 19, \n      attribution: '&copy; OpenStreetMap contributors'\n }).addTo(map);
-    maxZoom: 19,
+    // Capa Raster de CartoDB Voyager utilizando tu API key
+    L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_53vo_1_476d38e7a22a2250c1b153ee', {
+      maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(map);
 
@@ -171,13 +152,11 @@
       const clean = locationStr.toLowerCase();
       for (let key in GEO_COORDS) {
         if (clean.includes(key)) {
-          // Añadir una pequeña varianza aleatoria para que los pines de una misma ciudad no queden superpuestos
           const lat = GEO_COORDS[key][0] + (Math.random() - 0.5) * 0.03;
           const lng = GEO_COORDS[key][1] + (Math.random() - 0.5) * 0.03;
           return [lat, lng];
         }
       }
-      // Coordenada por defecto en el centro de Argentina si no coincide con ninguna clave
       return [-34.6037 + (Math.random() - 0.5) * 0.5, -58.3816 + (Math.random() - 0.5) * 0.5];
     }
 
@@ -220,5 +199,5 @@
     initMap();
   </script>
 </body>
-
 </html>
+```[cite: 1]
