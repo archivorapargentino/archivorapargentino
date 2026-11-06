@@ -550,7 +550,7 @@
         }
 
         titleStr = titleStr
-          .replace(/^[-–—.\s,]+|[-–—.\s,]+$|/g, '')
+          .replace(/^[-–—.\s,]+|[-–—.\s,]+$/g, '')
           .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
           .replace(/\(\s*\)/g, '')
           .trim();
@@ -617,7 +617,7 @@
         let tracklistData = (cols[4] || '').trim();
         let location = (cols[5] || '').trim();
         let crew = (cols[6] || '').trim();
-        let resena = (cols[7] || '').trim(); // Lectura de la columna H (índice 7)
+        let resena = (cols[7] || '').trim(); // <-- Lee correctamente la Columna H (índice 7)
 
         let artist = rawArtistAlbum;
         let album = rawArtistAlbum;
