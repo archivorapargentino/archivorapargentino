@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,11 @@
       --radius: 8px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       background-color: var(--bg);
@@ -47,7 +52,10 @@
       transition: color 0.15s ease;
     }
 
-    .nav-link:hover, .nav-link.active { color: var(--text); }
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--text);
+    }
 
     .content-container {
       max-width: 680px;
@@ -99,7 +107,9 @@
     }
 
     @media (max-width: 600px) {
-      .form-row { grid-template-columns: 1fr; }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
 
     label {
@@ -113,7 +123,9 @@
       color: var(--text-muted);
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
       padding: 11px 14px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
@@ -125,7 +137,9 @@
       transition: border-color 0.15s ease;
     }
 
-    input:focus, select:focus, textarea:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
       border-color: var(--text);
     }
 
@@ -155,8 +169,14 @@
       margin-top: 10px;
     }
 
-    .submit-btn:hover { background-color: var(--btn-hover); }
-    .submit-btn:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+    .submit-btn:hover {
+      background-color: var(--btn-hover);
+    }
+
+    .submit-btn:disabled {
+      background-color: var(--text-muted);
+      cursor: not-allowed;
+    }
 
     .success-message {
       display: none;
@@ -189,6 +209,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Iframe receptor nativo para evitar recarga de pantalla -->
@@ -202,14 +223,18 @@
 
   <main class="content-container">
     <h1 id="pageTitle">Registro de Obra Musical</h1>
-    <p class="lead" id="pageLead">Completá la ficha técnica para registrar un nuevo material o corregir datos en el archivo.</p>
+    <p class="lead" id="pageLead">Completá la ficha técnica para registrar un nuevo material o corregir datos en el
+      archivo.</p>
 
     <div id="editAlert" class="alert-banner">
-      Completando información de la ficha técnica <strong id="badgeId">#</strong>. Los datos preexistentes se encuentran bloqueados. Podés completar la información territorial faltante y usar el campo de notas para proponer cambios.
+      Completando información de la ficha técnica <strong id="badgeId">#</strong>. Los datos preexistentes se encuentran
+      bloqueados. Podés completar la información territorial faltante y usar el campo de notas para proponer cambios.
     </div>
 
     <!-- Envío nativo directo a Google Forms -->
-    <form id="collabForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse" method="POST" target="hidden_iframe">
+    <form id="collabForm"
+      action="https://docs.google.com/forms/d/e/1FAIpQLSfd8tpDMbY4Q35ilSioQEG2OzgH3G3EWsNyQgt2JF_Y7-6k9g/formResponse"
+      method="POST" target="hidden_iframe">
       <input type="hidden" id="disco_id" value="">
 
       <div class="form-group">
@@ -252,7 +277,7 @@
             <option value="Corrientes">Corrientes</option>
             <option value="Entre Ríos">Entre Ríos</option>
             <option value="Formosa">Formosa</option>
-            <option value="Jujuy">Jujuy</option> 
+            <option value="Jujuy">Jujuy</option>
             <option value="La Pampa">La Pampa</option>
             <option value="La Rioja">La Rioja</option>
             <option value="Mendoza">Mendoza</option>
@@ -295,19 +320,23 @@
       <!-- Campo de Reseña Histórica añadido -->
       <div class="form-group">
         <label for="resena">Reseña o Contexto Histórico de la Obra</label>
-        <span class="field-hint">Descripción, contexto o reseña histórica del lanzamiento (Columna O)</span>
-        <textarea id="resena" name="entry.AQUÍ_EL_ENTRY_ID_DE_RESEÑA" placeholder="Escribí una reseña o reseña histórica del material..."></textarea>
+        <span class="field-hint">Descripción, contexto o reseña histórica del lanzamiento</span>
+        <textarea id="resena" name="entry.AQUÍ_EL_ENTRY_ID_DE_RESEÑA"
+          placeholder="Escribí una reseña o reseña histórica del material..."></textarea>
       </div>
 
       <div class="form-group">
         <label for="notes" id="lblNotes">Notas o Datos Adicionales</label>
-        <span class="field-hint" id="hintNotes">Formato original (casete, CD), contexto o sugerencia de corrección.</span>
-        <textarea id="notes" name="entry.800104356" placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
+        <span class="field-hint" id="hintNotes">Formato original (casete, CD), contexto o sugerencia de
+          corrección.</span>
+        <textarea id="notes" name="entry.800104356"
+          placeholder="Cualquier contexto que ayude a verificar el material..."></textarea>
       </div>
 
       <div class="form-group">
         <label for="contact">Tu Nombre o Contacto (Opcional)</label>
-        <input type="text" id="contact" name="entry.395661196" placeholder="Tu nombre, usuario o email para darte crédito">
+        <input type="text" id="contact" name="entry.395661196"
+          placeholder="Tu nombre, usuario o email para darte crédito">
       </div>
 
       <button type="submit" id="submitBtn" class="submit-btn">Enviar propuesta al archivo</button>
@@ -315,7 +344,8 @@
 
     <div id="successMsg" class="success-message">
       <strong>¡Aporte recibido!</strong><br>
-      Muchas gracias por colaborar. Los datos fueron registrados en la planilla de respuestas y serán verificados para consolidarse en el catálogo general.
+      Muchas gracias por colaborar. Los datos fueron registrados en la planilla de respuestas y serán verificados para
+      consolidarse en el catálogo general.
     </div>
 
     <a href="index.html" class="back-btn">← Volver al catálogo</a>
@@ -391,4 +421,5 @@
     });
   </script>
 </body>
+
 </html>
