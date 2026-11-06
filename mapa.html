@@ -96,7 +96,7 @@
     // Inicializar mapa centrado en Argentina
     const map = L.map('map').setView([-38.4161, -63.6167], 5);
 
-    // Capa de mapa limpia estilo minimalista (CartoDB Positron)
+    // Capa de mapa estilo Voyager (CartoDB) con API key
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n      maxZoom: 19,\n      attribution: '&copy; OpenStreetMap contributors'\n    }).addTo(map);
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
