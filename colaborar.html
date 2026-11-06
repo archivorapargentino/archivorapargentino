@@ -328,7 +328,7 @@
           </a>
         </div>
 
-        <!-- Contenedor para la Reseña Histórica -->
+        <!-- Contenedor para la Reseña Histórica (Columna H) -->
         <div id="resenaBox" class="tracklist-box" style="display: none;">
           <h3>Reseña histórica</h3>
           <p id="resenaText" style="font-size: 0.92rem; color: var(--text); line-height: 1.6; white-space: pre-line;"></p>
@@ -550,4 +550,187 @@
         }
 
         titleStr = titleStr
-          .replace(/^[-–—.\s,]+|[-–—.\s
+          .replace(/^[-–—.\s,]+|[-–—.\s,]+$|/g, '')
+          .replace(/^\d{1,2}\s*[-–—.]*\s*/, '')
+          .replace(/\(\s*\)/g, '')
+          .trim();
+
+        const row = document.createElement('div');
+        const isInteractive = isYouTube && (trackVideoId || timeStr);
+        row.className = `track-row ${isInteractive ? 'interactive' : ''}`;
+
+        row.innerHTML = `
+          <div class="track-title-col">
+            <span class="track-num">${index + 1}.</span>
+            <span class="track-name">${titleStr}</span>
+          </div>
+          ${timeStr ? `<span class="track-time">${timeStr}</span>` : ''}
+        `;
+
+        if (isYouTube) {
+          row.title = `Reproducir tema ${index + 1}`;
+          row.addEventListener('click', () => {
+            if (trackVideoId) {
+              setYouTubePlayer(trackVideoId, 0);
+            } else if (timeStr && activeYouTubeId) {
+              setYouTubePlayer(activeYouTubeId, parseTimeToSeconds(timeStr));
+            }
+          });
+        }
+
+        tracklistItems.appendChild(row);
+      });
+
+      tracklistBox.style.display = 'block';
+    }
+
+    async function init() {
+      const statusEl = document.getElementById('statusMessage');
+      const detailEl = document.getElementById('detailView');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const albumIndex = parseInt(urlParams.get('id'));
+
+      if (isNaN(albumIndex) || albumIndex < 0) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'ID de disco no especificado. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+        return;
+      }
+
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        if (!response.ok) throw new Error('Error al conectar con la planilla');
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        if (albumIndex >= rows.length) {
+          statusEl.className = 'error-state';
+          statusEl.innerHTML = 'El disco no fue encontrado en el archivo. <br><br><a href="index.html" class="back-link">Volver al catálogo</a>';
+          return;
+        }
+
+        const cols = rows[albumIndex];
+        let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+        let year = (cols[1] || '').trim();
+        let link = (cols[2] || '').trim();
+        let manualCover = (cols[3] || '').trim();
+        let tracklistData = (cols[4] || '').trim();
+        let location = (cols[5] || '').trim();
+        let crew = (cols[6] || '').trim();
+        let resena = (cols[7] || '').trim(); // Lectura de la columna H (índice 7)
+
+        let artist = rawArtistAlbum;
+        let album = rawArtistAlbum;
+
+        if (rawArtistAlbum.includes(' - ')) {
+          const parts = rawArtistAlbum.split(' - ');
+          artist = parts[0].trim();
+          album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+        }
+
+        document.title = `${album} - ${artist} | Archivo del Rap Argentino`;
+        document.getElementById('albumTitle').textContent = album;
+        document.getElementById('artistName').innerHTML = formatArtistLinks(artist);
+
+        // Año como enlace de búsqueda
+        const metaYear = document.getElementById('metaYear');
+        if (year) {
+          metaYear.innerHTML = `<a href="index.html?q=${encodeURIComponent(year)}" class="meta-link">${year}</a>`;
+        } else {
+          metaYear.textContent = 'Sin fecha';
+        }
+
+        // Ubicación como enlace de búsqueda
+        const metaLocation = document.getElementById('metaLocation');
+        if (location) {
+          metaLocation.innerHTML = `<a href="index.html?q=${encodeURIComponent(location)}" class="meta-link">${location}</a>`;
+        } else {
+          metaLocation.textContent = 'No especificada';
+        }
+
+        // Crew / Sello como enlace de búsqueda
+        const metaCrew = document.getElementById('metaCrew');
+        if (crew) {
+          metaCrew.innerHTML = `<a href="index.html?q=${encodeURIComponent(crew)}" class="meta-link">${crew}</a>`;
+        } else {
+          metaCrew.textContent = '-';
+        }
+
+        document.getElementById('metaPlatform').textContent = getPlatform(link);
+        document.getElementById('metaId').textContent = `#${albumIndex}`;
+
+        const btnExt = document.getElementById('btnExternal');
+        if (link) {
+          btnExt.href = link;
+        } else {
+          btnExt.style.display = 'none';
+        }
+
+        const btnCompletar = document.getElementById('btnCompletar');
+        if (btnCompletar) {
+          const params = new URLSearchParams({
+            id: albumIndex,
+            artista: artist,
+            titulo: album,
+            anio: year || '',
+            enlace: link || '',
+            ubicacion: location || '',
+            crew: crew || ''
+          });
+          btnCompletar.href = `colaborar.html?${params.toString()}`;
+        }
+
+        // Mostrar u ocultar la caja de reseña según corresponda
+        const resenaBox = document.getElementById('resenaBox');
+        const resenaText = document.getElementById('resenaText');
+        if (resena) {
+          resenaText.textContent = resena;
+          resenaBox.style.display = 'block';
+        } else {
+          resenaBox.style.display = 'none';
+        }
+
+        statusEl.style.display = 'none';
+        detailEl.style.display = 'grid';
+
+        let firstTrackId = '';
+        if (tracklistData && tracklistData.includes('|')) {
+          const firstLine = tracklistData.split(/[\r\n]+/)[0];
+          if (firstLine.includes('|')) {
+            firstTrackId = firstLine.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+          }
+        }
+
+        const coverBox = document.getElementById('coverBox');
+        const ytId = extractYouTubeId(link) || firstTrackId;
+        if (manualCover) {
+          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+        } else if (ytId) {
+          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+        } else if (link.includes('spotify.com')) {
+          fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
+            .then(r => r.json())
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
+            .catch(() => {});
+        } else if (link.includes('soundcloud.com')) {
+          fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
+            .then(r => r.json())
+            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${album}">`; })
+            .catch(() => {});
+        } else {
+          coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
+        }
+
+        renderPlayer(link, firstTrackId);
+        renderTracklist(tracklistData, link.includes('youtube.com') || link.includes('youtu.be'));
+
+      } catch (err) {
+        statusEl.className = 'error-state';
+        statusEl.innerHTML = 'Error al conectar con la base de datos. Intenta recargar la página.';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
