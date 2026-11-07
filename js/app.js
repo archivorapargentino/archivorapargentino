@@ -20,6 +20,12 @@ const PRESERVED_GROUPS = [
 
 const coverCache = JSON.parse(localStorage.getItem('hh_covers') || '{}');
 
+// Clear cover cache if ?clearCache present
+if (new URLSearchParams(window.location.search).has('clearCache')) {
+  localStorage.removeItem('hh_covers');
+  console.log('Cover cache cleared via clearCache param');
+}
+
 function saveCoverCache(key, url) {
   coverCache[key] = url;
   try { localStorage.setItem('hh_covers', JSON.stringify(coverCache)); } catch (e) { }
