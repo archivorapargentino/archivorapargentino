@@ -362,39 +362,9 @@ function renderAlbums() {
   initObserver();
 
   let filtered = rawData.filter(([artist, album, year, link, manualCover, tracklist, id, location, crew]) => {
-    const fullText = `${artist} ${album} ${year} ${location} ${crew}`.toLowerCase();
-    const matchesSearch = fullText.includes(searchQuery.toLowerCase());
 
-    let matchesFilter = true;
-    const cleanYear = (year || '').trim();
-    const y = parseInt(cleanYear);
-
-    if (currentFilter === '90s') matchesFilter = !isNaN(y) && y >= 1989 && y <= 1999;
-    else if (currentFilter === '00s') matchesFilter = !isNaN(y) && y >= 2000 && y <= 2009;
-    else if (currentFilter === '10s') matchesFilter = !isNaN(y) && y >= 2010 && y <= 2019;
-    else if (currentFilter === '20s') matchesFilter = !isNaN(y) && y >= 2020 && y <= 2029;
-    else if (currentFilter === 'sin-fecha') {
-      matchesFilter = isNaN(y) || cleanYear === '' || cleanYear.includes('?') || cleanYear.toUpperCase() === 'S/D';
-    }
-
-    return matchesSearch && matchesFilter;
   });
-    const fullText = `${artist} ${album} ${year} ${location} ${crew}`.toLowerCase();
-    const matchesSearch = fullText.includes(searchQuery.toLowerCase());
 
-    let matchesFilter = true;
-    const cleanYear = (year || '').trim();
-    const y = parseInt(cleanYear);
-
-    if (currentFilter === '90s') matchesFilter = !isNaN(y) && y >= 1989 && y <= 1999;
-    else if (currentFilter === '00s') matchesFilter = !isNaN(y) && y >= 2000 && y <= 2009;
-    else if (currentFilter === '10s') matchesFilter = !isNaN(y) && y >= 2010 && y <= 2019;
-    else if (currentFilter === '20s') matchesFilter = !isNaN(y) && y >= 2020 && y <= 2029;
-    else if (currentFilter === 'sin-fecha') {
-      matchesFilter = isNaN(y) || cleanYear === '' || cleanYear.includes('?') || cleanYear.toUpperCase() === 'S/D';
-    }
-
-    return matchesSearch && matchesFilter;
   });
 
   filtered.sort((a, b) => {
