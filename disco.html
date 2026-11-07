@@ -2,7 +2,7 @@
 <html lang="es">
 
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.scdn.co https://i1.sndcdn.com https://i2.sndcdn.com https://i3.sndcdn.com https://f4.bcbits.com; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://open.spotify.com https://soundcloud.com https://bandcamp.com https://*.bandcamp.com; frame-src https://www.youtube.com https://open.spotify.com https://w.soundcloud.com https://*.bandcamp.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://open.spotify.com https://soundcloud.com https://bandcamp.com https://*.bandcamp.com https://api.microlink.io; frame-src https://www.youtube.com https://open.spotify.com https://w.soundcloud.com https://*.bandcamp.com;">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cargando disco... | Archivo del Rap Argentino</title>
@@ -768,19 +768,34 @@
 
         const coverBox = document.getElementById('coverBox');
         const ytId = extractYouTubeId(link) || firstTrackId;
+
+        function setCover(src) {
+          coverBox.innerHTML = `<img src="${src}" alt="${album}">`;
+          const imgEl = coverBox.querySelector('img');
+          imgEl.onerror = () => {
+            if (manualCover && manualCover.includes('/tapas/') && !imgEl.src.endsWith(manualCover.split('/tapas/')[1])) {
+              imgEl.src = `tapas/${manualCover.split('/tapas/')[1]}`;
+            } else if (ytId && !imgEl.src.includes('youtube.com')) {
+              imgEl.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+            } else {
+              coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
+            }
+          };
+        }
+
         if (manualCover) {
-          coverBox.innerHTML = `<img src="${manualCover}" alt="${album}">`;
+          setCover(manualCover);
         } else if (ytId) {
-          coverBox.innerHTML = `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="${album}">`;
+          setCover(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
         } else if (link.includes('spotify.com')) {
           fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
             .then(r => r.json())
-            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url}" alt="${album}">`; })
+            .then(d => { if (d?.thumbnail_url) setCover(d.thumbnail_url); })
             .catch(() => { });
         } else if (link.includes('soundcloud.com')) {
           fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(link.split('?')[0])}`)
             .then(r => r.json())
-            .then(d => { if (d?.thumbnail_url) coverBox.innerHTML = `<img src="${d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')}" alt="${album}">`; })
+            .then(d => { if (d?.thumbnail_url) setCover(d.thumbnail_url.replace('-large.jpg', '-t500x500.jpg')); })
             .catch(() => { });
         } else {
           coverBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 20px;">Sin carátula</div>`;
