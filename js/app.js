@@ -206,7 +206,7 @@ function updateHeaderMosaic() {
 
   // Build list of available covers from any platform, including manual covers and YouTube thumbnails.
   const availableCovers = rawData
-    .filter(([artist, album, year, link, manualCover, id]) => {
+    .filter(([artist, album, year, link, manualCover, tracklist, id]) => {
       // Manual cover always valid
       if (manualCover && manualCover !== '') return true;
       const platform = getPlatform(link);
@@ -214,7 +214,7 @@ function updateHeaderMosaic() {
       const cleanLink = link.split('?')[0];
       return coverCache[cleanLink] || coverCache[link];
     })
-    .map(([artist, album, year, link, manualCover, id]) => {
+    .map(([artist, album, year, link, manualCover, tracklist, id]) => {
       let coverUrl = manualCover || '';
       const platform = getPlatform(link);
       if (!coverUrl) {
