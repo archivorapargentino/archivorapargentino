@@ -429,13 +429,13 @@ function renderAlbums() {
     return;
   }
 
-  filtered.forEach(([artist, album, year, link, manualCover, id, location, crew]) => {
+  filtered.forEach(([artist, album, year, link, manualCover, tracklist, id, location, crew]) => {
     const card = document.createElement('div');
     card.className = 'card';
     const platform = getPlatform(link);
 
     card.innerHTML = `
-      <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}" data-manual-cover="${manualCover || ''}">
+      <div class="cover-container" data-platform="${platform}" data-link="${link}" data-album="${album}" data-manual-cover="${manualCover || ''}" data-tracklist="${tracklist.replace(/"/g, '&quot;')}">
         <div class="cover-placeholder">Sin carátula</div>
       </div>
       <div class="card-body">
