@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Territorial del Rap Argentino | Archivo del Rap Argentino</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #09090b;
+      --text-muted: #71717a;
+      --border: #e4e4e7;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .top-nav {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-link {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      transition: background-color 0.15s ease;
+    }
+    .back-link:hover { background-color: #f4f4f5; }
+    #map {
+      flex: 1;
+      width: 100%;
+      background: #f4f4f5;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+    }
+    .popup-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    .popup-meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .popup-link {
+      display: inline-block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #09090b;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <a href="index.html" class="back-link">← Volver al catálogo</a>
+    <h2>Mapa Territorial del Rap Argentino</h2>
+  </nav>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    // Enlace CSV nativo de Google Sheets
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQM10NnmHnP1UPPF7EU1EOBF5vI9pTXPyj1MbcIoKUZyt9k8ovtbuURMMekuAuYFMYaHGw9UNdss8em/pub?output=csv';
+
+    // Inicializar mapa centrado en Argentina
+    const map = L.map('map').setView([-38.4161, -63.6167], 5);
+
+    // Capa Raster de CartoDB Voyager integrada correctamente con tu API Key
+    L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_53vo_1_476d38e7a22a2250c1b153ee', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }).addTo(map);
+
+    function parseCSV(text) {
+      const rows = [];
+      let currentRow = [];
+      let currentVal = '';
+      let insideQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+        if (char === '"') {
+          if (insideQuotes && nextChar === '"') { currentVal += '"'; i++; }
+          else { insideQuotes = !insideQuotes; }
+        } else if (char === ',' && !insideQuotes) {
+          currentRow.push(currentVal.trim());
+          currentVal = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+          if (char === '\r' && nextChar === '\n') i++;
+          currentRow.push(currentVal.trim());
+          if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+          currentRow = [];
+          currentVal = '';
+        } else {
+          currentVal += char;
+        }
+      }
+      if (currentVal || currentRow.length > 0) {
+        currentRow.push(currentVal.trim());
+        if (currentRow.some(c => c.length > 0)) rows.push(currentRow);
+      }
+      return rows;
+    }
+
+    // Coordenadas aproximadas de referencia por ubicación/provincia para los pines automáticos
+    const GEO_COORDS = {
+      'caba': [-34.6037, -58.3816],
+      'capital federal': [-34.6037, -58.3816],
+      'buenos aires': [-34.9214, -57.9545],
+      'cordoba': [-31.4201, -64.1888],
+      'rosario': [-32.9442, -60.6505],
+      'santa fe': [-31.6333, -60.7000],
+      'mendoza': [-32.8908, -68.8272],
+      'la plata': [-34.9214, -57.9545],
+      'mar del plata': [-38.0055, -57.5426],
+      'tucuman': [-26.8083, -65.2176],
+      'salta': [-24.7821, -65.4232]
+    };
+
+    function getCoordinates(locationStr) {
+      if (!locationStr) return null;
+      const clean = locationStr.toLowerCase();
+      for (let key in GEO_COORDS) {
+        if (clean.includes(key)) {
+          const lat = GEO_COORDS[key][0] + (Math.random() - 0.5) * 0.03;
+          const lng = GEO_COORDS[key][1] + (Math.random() - 0.5) * 0.03;
+          return [lat, lng];
+        }
+      }
+      return [-34.6037 + (Math.random() - 0.5) * 0.5, -58.3816 + (Math.random() - 0.5) * 0.5];
+    }
+
+    async function initMap() {
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        const csvText = await response.text();
+        const rows = parseCSV(csvText);
+
+        rows.forEach((cols, index) => {
+          let rawArtistAlbum = (cols[0] || '').replace(/^Hoja \d+\s*/i, '').trim();
+          let year = (cols[1] || '').trim();
+          let location = (cols[5] || '').trim(); // Columna F: Ubicación
+
+          if (location && location !== 'No especificada') {
+            const coords = getCoordinates(location);
+            if (coords) {
+              let artist = rawArtistAlbum;
+              let album = rawArtistAlbum;
+              if (rawArtistAlbum.includes(' - ')) {
+                const parts = rawArtistAlbum.split(' - ');
+                artist = parts[0].trim();
+                album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
+              }
+
+              const marker = L.marker(coords).addTo(map);
+              marker.bindPopup(`
+                <div class="popup-title">${album}</div>
+                <div class="popup-meta">${artist} (${year || 'S/F'}) — ${location}</div>
+                <a href="disco.html?id=${index}" class="popup-link">Ver ficha completa →</a>
+              `);
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error al cargar los datos en el mapa:', err);
+      }
+    }
+
+    initMap();
+  </script>
+</body>
+</html>
