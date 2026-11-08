@@ -4,12 +4,95 @@ const https = require('https');
 
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQM10NnmHnP1UPPF7EU1EOBF5vI9pTXPyj1MbcIoKUZyt9k8ovtbuURMMekuAuYFMYaHGw9UNdss8em/pub?output=csv';
 
-// Caché en memoria para no saturar la planilla de Google
+// Caché en memoria para no saturar la planilla de Google ni los servicios de carátulas
 let sheetCache = {
   rows: null,
   timestamp: 0
 };
 const CACHE_TTL = 60 * 1000; // 1 minuto
+
+const coverMemoryCache = {};
+const DEFAULT_COVER = 'https://raw.githubusercontent.com/archivorapargentino/archivorapargentino/main/tapas/buenosairessubte.jpg';
+
+function fetchJson(url) {
+  return new Promise((resolve) => {
+    https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 3500 }, (res) => {
+      if ([301, 302, 307].includes(res.statusCode) && res.headers.location) {
+        return fetchJson(res.headers.location).then(resolve);
+      }
+      let body = '';
+      res.on('data', chunk => (body += chunk));
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body));
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }).on('error', () => resolve(null)).on('timeout', function () {
+      this.destroy();
+      resolve(null);
+    });
+  });
+}
+
+async function getCoverForAlbum(cols) {
+  const manualCover = (cols[3] || '').trim();
+  const link = (cols[2] || '').trim();
+  const tracklist = (cols[4] || '').trim();
+
+  // 1. Carátula manual en la planilla
+  if (manualCover) {
+    return manualCover;
+  }
+
+  // 2. Video de YouTube directo en la columna de enlace
+  if (link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
+    const ytMatch = link.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+    if (ytMatch) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+  }
+
+  // 3. Primer tema con ID de video en la lista de temas (tracklist)
+  if (tracklist && tracklist.includes('|')) {
+    const lines = tracklist.split(/[\r\n]+/);
+    for (const l of lines) {
+      if (l.includes('|')) {
+        const idPart = l.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        if (idPart && idPart.length === 11) {
+          return `https://img.youtube.com/vi/${idPart}/hqdefault.jpg`;
+        }
+      }
+    }
+  }
+
+  // 4. Spotify (obtenido vía oEmbed oficial)
+  if (link && link.includes('spotify.com')) {
+    const cleanUrl = link.split('?')[0];
+    if (coverMemoryCache[cleanUrl]) return coverMemoryCache[cleanUrl];
+    const data = await fetchJson(`https://open.spotify.com/oembed?url=${encodeURIComponent(cleanUrl)}`);
+    if (data && data.thumbnail_url) {
+      coverMemoryCache[cleanUrl] = data.thumbnail_url;
+      return data.thumbnail_url;
+    }
+  }
+
+  // 5. SoundCloud (obtenido vía oEmbed oficial)
+  if (link && link.includes('soundcloud.com')) {
+    const cleanUrl = link.split('?')[0];
+    if (coverMemoryCache[cleanUrl]) return coverMemoryCache[cleanUrl];
+    const data = await fetchJson(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
+    if (data && data.thumbnail_url) {
+      const highRes = data.thumbnail_url.replace('-large.jpg', '-t500x500.jpg');
+      coverMemoryCache[cleanUrl] = highRes;
+      return highRes;
+    }
+  }
+
+  // 6. Imagen de reserva por defecto
+  return DEFAULT_COVER;
+}
 
 function fetchCSV(url) {
   return new Promise((resolve, reject) => {
