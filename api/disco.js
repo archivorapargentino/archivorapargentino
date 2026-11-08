@@ -73,7 +73,7 @@ function escapeHtml(str) {
 }
 
 module.exports = async (req, res) => {
-  const templatePath = path.join(process.cwd(), 'disco.html');
+  const templatePath = path.join(process.cwd(), '_disco.html');
   let html = '';
 
   try {
@@ -148,7 +148,7 @@ module.exports = async (req, res) => {
       const pageTitle = `${escapeHtml(album)} - ${escapeHtml(artist)} | Archivo del Rap Argentino`;
       const host = req.headers['x-forwarded-host'] || req.headers.host || '';
       const proto = req.headers['x-forwarded-proto'] || 'https';
-      const canonicalUrl = host ? `${proto}://${host}/disco.html?id=${albumIndex}` : '';
+      const canonicalUrl = host ? `${proto}://${host}/disco/${albumIndex}` : '';
 
       const ogMetaTags = `
   <title>${pageTitle}</title>

@@ -273,7 +273,7 @@ function updateHeaderMosaic() {
     img.loading = 'lazy';
     img.onerror = () => { img.remove(); };
     img.addEventListener('click', () => {
-      window.location.href = `disco.html?id=${item.id}`;
+      window.location.href = `disco/${item.id}`;
     });
     headerMosaic.appendChild(img);
   });
@@ -457,7 +457,7 @@ function renderAlbums() {
 
     card.addEventListener('click', (e) => {
       if (e.target.classList.contains('artist-tag') || e.target.classList.contains('year-badge')) return;
-      window.location.href = `disco.html?id=${id}`;
+      window.location.href = `disco/${id}`;
     });
 
     const coverEl = card.querySelector('.cover-container');
