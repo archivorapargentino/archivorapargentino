@@ -4,6 +4,7 @@
 <head>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://docs.google.com https://*.googleusercontent.com https://open.spotify.com https://soundcloud.com https://bandcamp.com https://*.bandcamp.com https://api.microlink.io; frame-src 'self' https://www.youtube.com https://youtube.com https://open.spotify.com https://w.soundcloud.com https://bandcamp.com https://*.bandcamp.com;">
   <meta charset="UTF-8">
+  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cargando disco... | Archivo del Rap Argentino</title>
 
@@ -654,7 +655,11 @@
       const detailEl = document.getElementById('detailView');
 
       const urlParams = new URLSearchParams(window.location.search);
-      const albumIndex = parseInt(urlParams.get('id'));
+      let albumIndex = parseInt(urlParams.get('id'));
+      if (isNaN(albumIndex)) {
+        const pathMatch = window.location.pathname.match(/\/disco\/(\d+)/);
+        if (pathMatch) albumIndex = parseInt(pathMatch[1]);
+      }
 
       if (isNaN(albumIndex) || albumIndex < 0) {
         statusEl.className = 'error-state';
