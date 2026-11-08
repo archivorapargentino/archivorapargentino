@@ -1,8 +1,8 @@
 {
-  "cleanUrls": true,
+  "cleanUrls": false,
   "rewrites": [
     { "source": "/disco/:id", "destination": "/api/disco?id=:id" },
-    { "source": "/disco.html", "destination": "/api/disco" }
+    { "source": "/disco.html", "destination": "/api/disco" },
+    { "source": "/disco", "destination": "/api/disco" }
   ]
 }
-

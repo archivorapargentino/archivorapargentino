@@ -158,6 +158,7 @@ module.exports = async (req, res) => {
   <meta property="og:description" content="${escapeHtml(description)}">
   ${canonicalUrl ? `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">` : ''}
   ${coverUrl ? `<meta property="og:image" content="${escapeHtml(coverUrl)}">` : ''}
+  ${coverUrl ? `<meta property="og:image:secure_url" content="${escapeHtml(coverUrl)}">` : ''}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(album)} - ${escapeHtml(artist)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
