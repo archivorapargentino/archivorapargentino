@@ -9,7 +9,7 @@ let sheetCache = {
   rows: null,
   timestamp: 0
 };
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = 60 * 1000; // 1 minuto
 
 function fetchCSV(url) {
   return new Promise((resolve, reject) => {

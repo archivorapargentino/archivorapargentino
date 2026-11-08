@@ -668,7 +668,7 @@
       }
 
       try {
-        const response = await fetch(SHEET_CSV_URL);
+        const response = await fetch(SHEET_CSV_URL + '&_cb=' + Date.now(), { cache: 'no-store' });
         if (!response.ok) throw new Error('Error al conectar con la planilla');
         const csvText = await response.text();
         const rows = parseCSV(csvText);
@@ -765,9 +765,15 @@
 
         let firstTrackId = '';
         if (tracklistData && tracklistData.includes('|')) {
-          const firstLine = tracklistData.split(/[\r\n]+/)[0];
-          if (firstLine.includes('|')) {
-            firstTrackId = firstLine.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+          const lines = tracklistData.split(/[\r\n]+/);
+          for (const l of lines) {
+            if (l.includes('|')) {
+              const idPart = l.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+              if (idPart) {
+                firstTrackId = idPart;
+                break;
+              }
+            }
           }
         }
 

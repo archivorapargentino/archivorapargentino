@@ -501,7 +501,7 @@ function renderAlbums() {
 
 async function init() {
   try {
-    const response = await fetch(SHEET_CSV_URL);
+    const response = await fetch(SHEET_CSV_URL + '&_cb=' + Date.now(), { cache: 'no-store' });
     if (!response.ok) throw new Error('Error al conectar con la planilla');
     const csvText = await response.text();
     const rows = parseCSV(csvText);
