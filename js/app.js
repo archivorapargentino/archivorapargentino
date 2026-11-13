@@ -87,6 +87,7 @@ function processSheetRows(rows) {
     let tracklist = (cols[4] || '').trim();
     let location = (cols[5] || '').trim();
     let crew = (cols[6] || '').trim();
+    let resena = (cols[7] || '').trim();
 
     let artist = rawArtistAlbum;
     let album = rawArtistAlbum;
@@ -98,7 +99,7 @@ function processSheetRows(rows) {
     }
 
     // Return with tracklist before id (index)
-    return [artist, album, year, link, manualCover, tracklist, index, location, crew];
+    return [artist, album, year, link, manualCover, tracklist, index, location, crew, resena];
   });
 }
 
@@ -379,12 +380,13 @@ function renderAlbums() {
   grid.innerHTML = '';
   initObserver();
 
-  let filtered = rawData.filter(([artist, album, year, link, manualCover, tracklist, id, location, crew]) => {
+  let filtered = rawData.filter(([artist, album, year, link, manualCover, tracklist, id, location, crew, resena]) => {
     const decadeMap = { '90s': [1990, 1999], '00s': [2000, 2009], '10s': [2010, 2019], '20s': [2020, 2029] };
     const y = parseInt(year) || 0;
 
     if (currentFilter !== 'all') {
       if (currentFilter === 'sin-fecha') { if (y !== 0) return false; }
+      else if (currentFilter === 'resenas') { if (!resena) return false; }
       else {
         const range = decadeMap[currentFilter];
         if (!range || y < range[0] || y > range[1]) return false;
