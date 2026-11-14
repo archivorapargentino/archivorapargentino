@@ -206,14 +206,8 @@ module.exports = async (req, res) => {
         album = parts.slice(1).join(' - ').replace(/\(\d{4}\??\)/g, '').trim();
       }
 
-      // Buscar imagen de portada
-      let coverUrl = manualCover;
-      if (!coverUrl && link) {
-        const ytMatch = link.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/);
-        if (ytMatch) {
-          coverUrl = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
-        }
-      }
+      // Buscar imagen de portada usando todos los métodos disponibles (YouTube, Spotify, SoundCloud, manual)
+      const coverUrl = await getCoverForAlbum(cols);
 
       // Descripción para redes
       const descParts = [];
