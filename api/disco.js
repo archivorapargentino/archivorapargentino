@@ -43,14 +43,14 @@ async function getCoverForAlbum(cols) {
 
   // 1. Carátula manual en la planilla
   if (manualCover) {
-    return manualCover;
+    return { url: manualCover, width: 500, height: 500 };
   }
 
   // 2. Video de YouTube directo en la columna de enlace
   if (link && (link.includes('youtube.com') || link.includes('youtu.be'))) {
     const ytMatch = link.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/);
     if (ytMatch) {
-      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+      return { url: `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`, width: 480, height: 360 };
     }
   }
 
@@ -61,7 +61,7 @@ async function getCoverForAlbum(cols) {
       if (l.includes('|')) {
         const idPart = l.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
         if (idPart && idPart.length === 11) {
-          return `https://img.youtube.com/vi/${idPart}/hqdefault.jpg`;
+          return { url: `https://img.youtube.com/vi/${idPart}/hqdefault.jpg`, width: 480, height: 360 };
         }
       }
     }
@@ -73,8 +73,9 @@ async function getCoverForAlbum(cols) {
     if (coverMemoryCache[cleanUrl]) return coverMemoryCache[cleanUrl];
     const data = await fetchJson(`https://open.spotify.com/oembed?url=${encodeURIComponent(cleanUrl)}`);
     if (data && data.thumbnail_url) {
-      coverMemoryCache[cleanUrl] = data.thumbnail_url;
-      return data.thumbnail_url;
+      const cover = { url: data.thumbnail_url, width: 300, height: 300 };
+      coverMemoryCache[cleanUrl] = cover;
+      return cover;
     }
   }
 
@@ -85,13 +86,14 @@ async function getCoverForAlbum(cols) {
     const data = await fetchJson(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(cleanUrl)}`);
     if (data && data.thumbnail_url) {
       const highRes = data.thumbnail_url.replace('-large.jpg', '-t500x500.jpg');
-      coverMemoryCache[cleanUrl] = highRes;
-      return highRes;
+      const cover = { url: highRes, width: 500, height: 500 };
+      coverMemoryCache[cleanUrl] = cover;
+      return cover;
     }
   }
 
   // 6. Imagen de reserva por defecto
-  return DEFAULT_COVER;
+  return { url: DEFAULT_COVER, width: 1200, height: 630 };
 }
 
 function fetchCSV(url) {
@@ -207,7 +209,10 @@ module.exports = async (req, res) => {
       }
 
       // Buscar imagen de portada usando todos los métodos disponibles (YouTube, Spotify, SoundCloud, manual)
-      const coverUrl = await getCoverForAlbum(cols);
+      const cover = await getCoverForAlbum(cols);
+      const coverUrl = cover.url;
+      const coverWidth = cover.width;
+      const coverHeight = cover.height;
 
       // Descripción para redes
       const descParts = [];
@@ -236,6 +241,9 @@ module.exports = async (req, res) => {
   ${canonicalUrl ? `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">` : ''}
   ${coverUrl ? `<meta property="og:image" content="${escapeHtml(coverUrl)}">` : ''}
   ${coverUrl ? `<meta property="og:image:secure_url" content="${escapeHtml(coverUrl)}">` : ''}
+  ${coverUrl && coverWidth ? `<meta property="og:image:width" content="${coverWidth}">` : ''}
+  ${coverUrl && coverHeight ? `<meta property="og:image:height" content="${coverHeight}">` : ''}
+  <meta property="og:image:type" content="image/jpeg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(album)} - ${escapeHtml(artist)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
@@ -251,7 +259,7 @@ module.exports = async (req, res) => {
   }
 
   // Encabezados de caché para que Vercel Edge CDN sirva respuestas ultrarrápidas
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(html);
 };
