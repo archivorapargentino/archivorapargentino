@@ -73,7 +73,12 @@ async function getCoverForAlbum(cols) {
     if (coverMemoryCache[cleanUrl]) return coverMemoryCache[cleanUrl];
     const data = await fetchJson(`https://open.spotify.com/oembed?url=${encodeURIComponent(cleanUrl)}`);
     if (data && data.thumbnail_url) {
-      const cover = { url: data.thumbnail_url, width: 300, height: 300 };
+      // Spotify devuelve URLs tipo: https://i.scdn.co/image/ab67616d0000b273...
+      // Reemplazar el segmento de tamaño para obtener 640x640 en lugar de 300x300
+      const bigUrl = data.thumbnail_url
+        .replace('ab67616d00004851', 'ab67616d0000b273')  // small → large
+        .replace('/image/ab67616d00001e02', '/image/ab67616d0000b273'); // medium → large
+      const cover = { url: bigUrl, width: 640, height: 640 };
       coverMemoryCache[cleanUrl] = cover;
       return cover;
     }
@@ -234,8 +239,9 @@ module.exports = async (req, res) => {
 
       const ogMetaTags = `
   <title>${pageTitle}</title>
-  <meta property="og:type" content="music.album">
+  <meta property="og:type" content="website">
   <meta property="og:site_name" content="Archivo del Rap Argentino">
+  <meta property="fb:app_id" content="966242223397117">
   <meta property="og:title" content="${escapeHtml(album)} - ${escapeHtml(artist)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   ${canonicalUrl ? `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">` : ''}
