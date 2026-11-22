@@ -7,123 +7,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #ffffff;
-      --text: #09090b;
-      --text-muted: #71717a;
-      --border: #e4e4e7;
-      --border-subtle: #f4f4f5;
-      --radius: 8px;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      line-height: 1.65;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .top-nav {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px 20px 0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 16px;
-    }
-
-    .nav-link {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: color 0.15s ease;
-    }
-
-    .nav-link:hover, .nav-link.active {
-      color: var(--text);
-    }
-
-    .content-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 50px 20px 100px;
-    }
-
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 8px;
-    }
-
-    .lead {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      margin-bottom: 36px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 24px;
-    }
-
-    h2 {
-      font-size: 1.3rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      margin: 32px 0 12px;
-    }
-
-    p {
-      color: #27272a;
-      margin-bottom: 18px;
-      font-size: 0.98rem;
-    }
-
-    ul {
-      margin: 12px 0 20px 24px;
-      color: #27272a;
-    }
-
-    li {
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-    }
-
-    .callout {
-      background-color: var(--border-subtle);
-      border-left: 3px solid var(--text);
-      padding: 16px 20px;
-      border-radius: 0 var(--radius) var(--radius) 0;
-      margin: 28px 0;
-      font-size: 0.92rem;
-      color: #3f3f46;
-    }
-
-    .back-btn {
-      display: inline-block;
-      margin-top: 30px;
-      font-size: 0.88rem;
-      font-weight: 500;
-      color: var(--text);
-      text-decoration: none;
-      border-bottom: 1px solid var(--text);
-      padding-bottom: 2px;
-    }
-
-    .back-btn:hover {
-      opacity: 0.7;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/page.css">
+  <link rel="icon" type="image/png" href="img/logo-negro.png">
 </head>
 <body>
 
   <nav class="top-nav">
-    <a href="index.html" class="nav-link">Catálogo</a>
-    <a href="acerca.html" class="nav-link active">Acerca del Archivo</a>
-    <a href="colaborar.html" class="nav-link">Colaborar</a>
+    <a href="index.html" class="nav-logo">
+      <img src="img/logo-negro.png" alt="Archivo del Rap Argentino" class="nav-logo-img">
+      <span class="nav-site-name">Archivo del Rap Argentino</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Catálogo</a>
+      <a href="acerca.html" class="nav-link active">Acerca</a>
+      <a href="colaborar.html" class="nav-link">Colaborar</a>
+    </div>
   </nav>
 
   <main class="content-container">
