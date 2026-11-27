@@ -195,11 +195,12 @@
     let activeYouTubeId = null;
     let activeYouTubePlaylist = null;
 
-    function setYouTubePlayer(videoId, startSeconds = 0) {
+    function setYouTubePlayer(videoId, startSeconds = 0, queueIds = []) {
       const box = document.getElementById('playerBox');
       const cleanId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
       const startParam = startSeconds > 0 ? `&start=${startSeconds}` : '';
-      box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+      const queueParam = queueIds.length ? `&playlist=${queueIds.join(',')}` : '';
+      box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${cleanId}?autoplay=1${startParam}${queueParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
     }
 
     function renderPlayer(link, firstTrackVideoId) {
@@ -218,7 +219,8 @@
         activeYouTubePlaylist = extractYouTubePlaylistId(link);
 
         if (activeYouTubeId) {
-          box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${activeYouTubeId}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+          const listParam = activeYouTubePlaylist ? `?list=${activeYouTubePlaylist}` : '';
+          box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/${activeYouTubeId}${listParam}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         } else if (activeYouTubePlaylist) {
           box.innerHTML = `<iframe id="ytPlayerFrame" src="https://www.youtube.com/embed/videoseries?list=${activeYouTubePlaylist}" height="420" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
         }
@@ -285,6 +287,11 @@
       lines = lines.map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length === 0) return;
 
+      const trackIds = lines.map(line => {
+        if (!line.includes('|')) return '';
+        return line.split('|')[1].trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      });
+
       lines.forEach((line, index) => {
         let titleStr = line;
         let trackVideoId = '';
@@ -324,7 +331,7 @@
           row.title = `Reproducir tema ${index + 1}`;
           row.addEventListener('click', () => {
             if (trackVideoId) {
-              setYouTubePlayer(trackVideoId, 0);
+              setYouTubePlayer(trackVideoId, 0, trackIds.slice(index + 1).filter(Boolean));
             } else if (timeStr && activeYouTubeId) {
               setYouTubePlayer(activeYouTubeId, parseTimeToSeconds(timeStr));
             }
