@@ -197,6 +197,7 @@ header {
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
+  transition: all 0.15s ease;
 }
 
 #randomBtn:hover {
