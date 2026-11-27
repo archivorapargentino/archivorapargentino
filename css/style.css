@@ -184,6 +184,33 @@ header {
   flex-grow: 1;
 }
 
+#randomBtn {
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#randomBtn:hover {
+  color: var(--text);
+  border-color: #a1a1aa;
+}
+
+.shuffle-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: -2px;
+}
+
 .search-box input,
 .sort-select {
   padding: 10px 14px;

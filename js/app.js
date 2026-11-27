@@ -562,6 +562,11 @@ sortSelect.addEventListener('change', (e) => {
   renderAlbums();
 });
 
+document.getElementById('randomBtn').addEventListener('click', () => {
+  if (!rawData.length) return;
+  window.location.href = `disco/${rawData[Math.floor(Math.random() * rawData.length)][6]}`;
+});
+
 filterButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     filterButtons.forEach(b => b.classList.remove('active'));
