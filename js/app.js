@@ -42,6 +42,10 @@ function updateURLParams() {
   window.history.replaceState(null, '', newPath);
 }
 
+function normalizeText(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 function parseCSV(text) {
   const rows = [];
   let currentRow = [];
@@ -394,8 +398,8 @@ function renderAlbums() {
     }
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const haystack = `${artist} ${album} ${year} ${location} ${crew}`.toLowerCase();
+      const q = normalizeText(searchQuery);
+      const haystack = normalizeText(`${artist} ${album} ${year} ${location} ${crew}`);
       if (!haystack.includes(q)) return false;
     }
 
